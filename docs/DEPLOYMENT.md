@@ -1,63 +1,40 @@
-# Deployment (AWS EC2)
+# Deployment (Hugging Face Spaces, free)
 
-Every push to `main` runs `deploy.yml`: build both images → push to GHCR → SSH to EC2 → write `.env` from GitHub Secrets → `docker compose pull && up -d` → health check over HTTPS. The workflow skips itself until the `EC2_HOST` secret exists.
+The app ships as **one Docker container** on a Hugging Face Space (free CPU tier: 2 vCPU, 16 GB RAM, enough for PyTorch, the embedding model and the NLI guardrail). FastAPI serves the API under `/api` and the built React app on every other path.
 
-## 1. Launch the instance (one time)
-
-1. **Check current EC2 pricing and free-tier terms first**, and create an **AWS Budget alert** (e.g. $5/month) so nothing bills by surprise.
-2. EC2 → Launch instance: Ubuntu 24.04 LTS, **t3.small or larger** (PyTorch + embeddings + NLI need about 2 GB RAM), 20 GB gp3 disk.
-3. Security group inbound: **22 from your IP only**, 80 and 443 from anywhere.
-4. Allocate an **Elastic IP** and associate it with the instance.
-5. Point a domain or free subdomain (e.g. DuckDNS) at the Elastic IP with an A record.
-
-## 2. Prepare the server
-
-```bash
-ssh -i your-key.pem ubuntu@<elastic-ip>
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker ubuntu && exit     # log in again so the group applies
-mkdir -p ~/autocare-ai
+```
+push to main ──▶ CI (lint, types, tests, build) ──▶ Deploy workflow
+                                                     └─ deploy/hf/push.py: stage backend/ + frontend/ + Dockerfile,
+                                                        upload to the Space, set Space secrets
+Hugging Face builds deploy/hf/Dockerfile: npm build → pip install → bake models → build Chroma index
 ```
 
-Add a swap file on small instances to avoid out-of-memory errors during model load:
+## One-time setup (about 5 minutes)
 
-```bash
-sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
+1. Create a free account at huggingface.co.
+2. Create a **write** token at https://huggingface.co/settings/tokens.
+3. In the GitHub repo, open **Settings → Secrets and variables → Actions**:
 
-## 3. GitHub Secrets (Settings → Secrets and variables → Actions)
+   | Kind | Name | Value |
+   | --- | --- | --- |
+   | Secret | `HF_TOKEN` | The write token |
+   | Secret | `LLM_API_KEY` | Your Groq key |
+   | Variable | `HF_SPACE` | `<your-hf-username>/autocare-ai` |
+   | Secret (optional) | `DATABASE_URL` | A free Postgres URL, e.g. from neon.tech, as `postgresql+psycopg://user:pass@host/db?sslmode=require` |
 
-| Secret | Value |
-| --- | --- |
-| `EC2_HOST` | Elastic IP or domain |
-| `EC2_USER` | `ubuntu` |
-| `EC2_SSH_KEY` | Contents of the private key (`.pem`) |
-| `SITE_ADDRESS` | Your domain, e.g. `autocare.example.com` (Caddy issues HTTPS for it) |
-| `LLM_PROVIDER` | `groq` or `gemini` (optional; default `groq`) |
-| `LLM_API_KEY` | Groq or Gemini key |
-| `POSTGRES_PASSWORD` | A long random password (letters and digits only, since it goes in a URL) |
+4. Run the **Deploy** workflow (Actions → Deploy → Run workflow), or push to `main`.
 
-Also create an environment called `production` (Settings → Environments). The deploy job uses it, so you can add a required reviewer if you want.
+The workflow creates the Space if it doesn't exist and copies `LLM_API_KEY` (and `DATABASE_URL`) into the Space's secrets; they're never written into the uploaded files. The first build takes roughly 10–15 minutes, because it installs PyTorch and builds the vector index. After that, the app is live at `https://<hf-username>-autocare-ai.hf.space`.
 
-GHCR images are private by default. The workflow logs the server in with the job's token on every deploy, so nothing else is needed.
+## Database
 
-## 4. Deploy
+Without `DATABASE_URL`, the Space uses SQLite in `/tmp`. That works, but the history resets whenever the Space restarts or sleeps (free Spaces sleep after about 48 hours without visits). Set `DATABASE_URL` to a free Neon Postgres database to keep the history. Alembic creates the tables on startup.
 
-Merge to `main` (or run the workflow manually). Then open `https://<your-domain>`.
+## Local alternatives
+
+- `docker compose up --build`: the full three-container stack (Caddy + FastAPI + PostgreSQL) on http://localhost.
+- Single container exactly as deployed: `docker build -f deploy/hf/Dockerfile -t autocare . && docker run -p 7860:7860 -e LLM_API_KEY=... autocare`. Run it from the repo root after `python deploy/hf/push.py`-style staging, or simply run `docker build` from a folder containing `backend/`, `frontend/` and that Dockerfile.
 
 ## Roll back
 
-Images are tagged with the short commit SHA. On the server:
-
-```bash
-cd ~/autocare-ai
-sed -i 's#^BACKEND_IMAGE=.*#BACKEND_IMAGE=ghcr.io/<owner>/autocare-ai-backend:<old-sha>#; s#^FRONTEND_IMAGE=.*#FRONTEND_IMAGE=ghcr.io/<owner>/autocare-ai-frontend:<old-sha>#' .env
-docker compose pull && docker compose up -d
-```
-
-Or revert the commit on `main` and let the workflow redeploy.
-
-## Fallback: Render / Railway
-
-The same images run unchanged. Create a managed Postgres, set `DATABASE_URL=postgresql+psycopg://...`, `LLM_API_KEY` and `CORS_ORIGINS` on the backend service, deploy `ghcr.io/<owner>/autocare-ai-backend:latest`, and serve the frontend image (or the static `frontend/dist`) with `/api` routed to the backend.
+Each deploy is a commit in the Space repository. Revert the bad commit on GitHub `main` (CI and Deploy run again), or revert the commit in the Space's **Files → History** tab.

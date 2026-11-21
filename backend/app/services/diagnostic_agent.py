@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from app.schemas import Prediction
 from app.services.guardrail import Guardrail, SentenceVerdict
-from app.services.llm import ChatTurn, LLMClient
+from app.services.llm import ChatTurn, LLMClient, normalise_citations
 from app.services.manual_retriever import Chunk, Retriever
 
 NOT_COVERED = "This isn't covered in the manuals I have. Please have a qualified mechanic inspect the engine."
@@ -15,11 +15,12 @@ NOT_COVERED = "This isn't covered in the manuals I have. Please have a qualified
 SYSTEM_PROMPT = """You are AutoCare AI, a vehicle diagnostics assistant.
 Rules:
 1. Answer ONLY from the CONTEXT passages. Do not use outside knowledge.
-2. After every factual sentence, cite its passage exactly as written in the passage header, e.g. [Owner's Manual, page 12].
+2. After every factual sentence, cite its passage in square brackets exactly as written in the passage header, e.g. [Owner's Manual, page 12]. Never cite anything that is not a passage header.
 3. If the context does not answer the question, reply exactly: "Not covered in the manuals."
 4. For anything safety-related (overheating, oil pressure loss, brakes, fuel leaks), end by recommending a qualified mechanic.
-5. Be concise: at most 6 sentences, plain language, the most likely cause and the first check first.
-6. The fault-risk score comes from a statistical model, not an inspection; never present it as certain."""
+5. Stay close to the passages' wording. Do not add causes, numbers or explanations that no passage states, even if you believe them.
+6. Be concise: at most 6 sentences, plain language, the most likely cause and the first check first.
+7. The fault-risk score comes from a statistical model, not an inspection; never present it as certain."""
 
 _CITE = re.compile(r"\[([^\]]+?)\]")
 
@@ -41,10 +42,27 @@ class DiagnosticAnswer:
 def prediction_context(prediction: Prediction | None) -> str:
     if prediction is None:
         return ""
-    drivers = ", ".join(
-        f"{'high' if f.direction == 'high' else 'low'} {f.label.lower()}" for f in prediction.top_features
+    drivers = (
+        ", ".join(
+            f"{'high' if f.direction == 'high' else 'low'} {f.label.lower()}"
+            for f in prediction.top_features
+            if f.impact > 0
+        )
+        or "no single reading stands out"
     )
     return f"{prediction.risk_band} fault risk ({prediction.probability:.0%}); top drivers: {drivers}"
+
+
+def prediction_premise(prediction: Prediction) -> str:
+    drivers = " ".join(
+        f"The {f.label.lower()} reading is {'higher' if f.direction == 'high' else 'lower'} than usual."
+        for f in prediction.top_features
+        if f.impact > 0
+    )
+    return (
+        f"The model estimates a {prediction.risk_band} fault risk of {prediction.probability:.0%}. "
+        f"The readings that drove the result: {drivers}"
+    )
 
 
 class DiagnosticAgent:
@@ -107,17 +125,38 @@ class DiagnosticAgent:
         user = (
             f"PREDICTION: {ctx}\n\n" if ctx else ""
         ) + f"QUESTION: {question}\n\nCONTEXT:\n{self.format_context(chunks)}"
-        raw = self.llm.complete(SYSTEM_PROMPT, user, history)
+        raw = normalise_citations(self.llm.complete(SYSTEM_PROMPT, user, history)).strip()
         if "not covered in the manuals" in raw.lower() and len(raw) < 80:
             return DiagnosticAnswer(NOT_COVERED, [], chunks, [], True, False, mode, query, raw)
 
-        verdicts = self.guardrail.check(raw, [c.text for c in chunks])
+        # The prediction itself is given data, so statements about the readings are checkable too.
+        premises = [c.text for c in chunks] + ([prediction_premise(prediction)] if prediction else [])
+        verdicts = self.guardrail.check(raw, premises)
         claims = [v for v in verdicts if v.score is not None]
-        share = sum(v.supported for v in claims) / len(claims) if claims else 1.0
-        if share < self.min_supported_share:
-            # Most of the answer isn't backed by the manuals: refuse rather than guess.
+        supported_claims = [v for v in claims if v.supported]
+        share = len(supported_claims) / len(claims) if claims else 1.0
+        if claims and not supported_claims:
+            # Nothing in the answer is backed by the manuals: refuse rather than guess.
             return DiagnosticAnswer(
-                NOT_COVERED, [], chunks, verdicts, False, False, mode, query, raw, {"supported_share": share}
+                NOT_COVERED, [], chunks, verdicts, False, False, mode, query, raw, {"supported_share": 0.0}
+            )
+        if share < self.min_supported_share:
+            # Mostly unsupported: keep only the verified sentences (plus advice) and say so.
+            kept = [v for v in verdicts if v.supported]
+            removed = len(verdicts) - len(kept)
+            text = " ".join(v.text for v in kept)
+            text += f" (I removed {removed} sentence{'s' if removed != 1 else ''} the manuals don't support.)"
+            return DiagnosticAnswer(
+                answer=text,
+                citations=self._citations(text, chunks),
+                snippets=chunks,
+                sentences=kept,
+                supported=True,
+                covered=True,
+                mode=mode,
+                query=query,
+                raw_answer=raw,
+                extra={"supported_share": share, "trimmed": removed},
             )
         return DiagnosticAnswer(
             answer=raw,

@@ -32,15 +32,17 @@ export function RiskGauge({ probability, band }: { probability: number; band: Pr
   );
 }
 
+const pts = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v * 100).toFixed(1)} pts`;
+
 export function DriversChart({ prediction }: { prediction: Prediction }) {
   const data = prediction.top_features.map((f) => ({
     name: f.label,
-    deviation: f.deviation,
+    impact: f.impact * 100,
     value: f.value,
-    direction: f.direction,
+    raises: f.impact > 0,
   }));
-  // Symmetric axis around 0 so "lower than usual" and "higher than usual" read at a glance.
-  const bound = Math.ceil(Math.max(1, ...data.map((d) => Math.abs(d.deviation))));
+  // Symmetric axis around 0: bars to the right raise the fault probability, to the left lower it.
+  const bound = Math.max(5, Math.ceil(Math.max(...data.map((d) => Math.abs(d.impact))) / 5) * 5);
   return (
     <div className="h-40">
       <ResponsiveContainer width="100%" height="100%">
@@ -49,6 +51,7 @@ export function DriversChart({ prediction }: { prediction: Prediction }) {
             type="number"
             domain={[-bound, bound]}
             allowDecimals={false}
+            tickFormatter={(v: number) => `${v > 0 ? "+" : ""}${v}`}
             tick={{ fontSize: 11, fill: "#64748b" }}
             tickLine={false}
             axisLine={false}
@@ -57,11 +60,11 @@ export function DriversChart({ prediction }: { prediction: Prediction }) {
           <ReferenceLine x={0} stroke="#94a3b8" />
           <Tooltip
             cursor={{ fill: "#f1f5f9" }}
-            formatter={(v: number, _n, item) => [`${v > 0 ? "+" : ""}${v.toFixed(2)} σ (reading ${item.payload.value})`, "vs healthy mean"]}
+            formatter={(v: number, _n, item) => [`${pts(v / 100)} (reading ${item.payload.value})`, "Effect on fault probability"]}
           />
-          <Bar dataKey="deviation" radius={[3, 3, 3, 3]} barSize={18}>
+          <Bar dataKey="impact" radius={[3, 3, 3, 3]} barSize={18}>
             {data.map((d) => (
-              <Cell key={d.name} fill={d.direction === "high" ? "#1f63d8" : "#64748b"} />
+              <Cell key={d.name} fill={d.raises ? "#1f63d8" : "#94a3b8"} />
             ))}
           </Bar>
         </BarChart>
@@ -93,14 +96,16 @@ export function ResultCard({ prediction, loading }: { prediction: Prediction | n
             </p>
             <div>
               <h3 className="text-sm font-medium text-slate-800">Readings that drove this result</h3>
-              <p className="mb-2 text-xs text-slate-500">Distance from the healthy-engine average, in standard deviations (σ).</p>
+              <p className="mb-2 text-xs text-slate-500">
+                How many percentage points each reading adds to the fault probability, compared with a typical healthy value for that
+                sensor.
+              </p>
               <DriversChart prediction={prediction} />
               <ul className="mt-2 space-y-1 text-sm text-slate-600">
                 {prediction.top_features.map((f) => (
                   <li key={f.feature}>
                     <span className="font-medium text-slate-800">{f.label}</span> is {f.direction === "high" ? "higher" : "lower"} than
-                    usual ({f.value}, {f.deviation > 0 ? "+" : ""}
-                    {f.deviation.toFixed(1)} σ)
+                    usual ({f.value}): <span className="tabular-nums">{pts(f.impact)}</span>
                   </li>
                 ))}
               </ul>

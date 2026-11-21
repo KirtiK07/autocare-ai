@@ -1,8 +1,11 @@
 # Architecture
 
-Three containers: **Caddy + React** (frontend), **FastAPI** (backend: ML model and RAG agent) and **PostgreSQL**. Training (`ml.train`) and ingestion (`rag.ingest`) are offline commands; the backend loads their outputs (`artifacts/`, `vectorstore/`) once at startup in FastAPI's lifespan.
+Three containers: **Caddy + React** (frontend), **FastAPI** (backend: ML model and RAG agent) and **PostgreSQL** locally via Docker Compose. In production on Hugging Face Spaces, the same FastAPI app also serves the built React app from one container. Training (`ml.train`) and ingestion (`rag.ingest`) are offline commands; the backend loads their outputs (`artifacts/`, `vectorstore/`) once at startup in FastAPI's lifespan.
 
 ```
+Local (docker compose):  Browser ──HTTPS──▶ Caddy ──/api/*──▶ FastAPI
+Production (HF Space):   Browser ──HTTPS──▶ FastAPI (serves /api and the built SPA)
+
 Browser ──HTTPS──▶ Caddy ──/api/*──▶ FastAPI (uvicorn)
                     │                   ├─ FaultPredictor  ── artifacts/ (scaler.joblib, fault_net.pt, model_meta.json)
                     └─ static SPA       ├─ DiagnosticAgent ─┬─ ManualRetriever ── Chroma (vectorstore/)
@@ -28,7 +31,7 @@ The UI never calls the LLM or the database directly. API keys stay on the server
 
 1. Pydantic validates `SensorReading`: every field is required and bounded, otherwise a 422 names the field.
 2. `FaultPredictor.predict` runs the saved `Preprocessor` (impute → clip → engineer → scale), then the served model, which is PyTorch or a scikit-learn model, whichever `model_meta.json` names.
-3. The probability is mapped to a risk band using the tuned threshold. The top 3 drivers are the sensors furthest from the healthy-class mean, in standard units.
+3. The probability is mapped to a risk band using the tuned threshold. The top 3 drivers come from occlusion: each sensor is reset to its healthy-class mean and the batch is re-scored. A driver's impact is how much the fault probability drops.
 4. `PredictionRepository.add` stores the inputs, result and model version, and the API returns the record.
 
 ## Request flow: `POST /api/diagnose`
@@ -37,7 +40,7 @@ The UI never calls the LLM or the database directly. API keys stay on the server
 2. The prediction and the last 6 chat turns are loaded from the database.
 3. `DiagnosticAgent.retrieve`: the **question alone** must retrieve chunks above the relevance floor. Otherwise the answer is "not covered". This stops an off-topic question plus "low oil pressure" context from always pulling oil passages. Results are then merged with a search on question + prediction context for ranking.
 4. The LLM gets a fixed system prompt: answer only from the context, cite `[source, page]`, recommend a mechanic for safety issues.
-5. The guardrail checks each sentence. A sentence counts as supported if an NLI cross-encoder finds it entailed by a retrieved chunk, or if it quotes one near-verbatim. If fewer than half of the factual sentences are supported, the answer is replaced with the "not covered" message.
+5. The guardrail checks each factual sentence against 1–3 sentence windows of the retrieved passages, plus a sentence describing the prediction. A sentence is supported if the NLI cross-encoder (deberta-v3-small) finds it entailed, if it quotes a passage near-verbatim, or if it shares at least 60% of its words with one window and no window contradicts it. Advice sentences ("Check the oil level") are shown but not scored. If no claim is supported, the answer becomes "not covered". If fewer than half are supported, only the supported sentences are kept, with a note saying how many were removed.
 6. Both turns are saved; the API returns the answer, citations, retrieved snippets (for the source drawer) and per-sentence verdicts (for underlining).
 
 ## Why each tool

@@ -16,7 +16,6 @@ __pycache__/
 backend/data/raw/
 backend/vectorstore/
 backend/*.db
-backend/knowledge/pdfs/*.pdf
 
 # Node
 node_modules/
@@ -29,3 +28,6 @@ frontend/test-results/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local downloads
+*.zip

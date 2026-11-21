@@ -1,6 +1,6 @@
 # Local:  cp .env.example .env && docker compose up --build   -> http://localhost
-# Server: the deploy workflow sets BACKEND_IMAGE / FRONTEND_IMAGE to GHCR tags and runs
-#         `docker compose pull && docker compose up -d` (no build on the server).
+# Full local stack (Caddy + FastAPI + PostgreSQL). Production runs as a single container
+# on Hugging Face Spaces (deploy/hf/Dockerfile); see docs/DEPLOYMENT.md.
 name: autocare-ai
 
 services:

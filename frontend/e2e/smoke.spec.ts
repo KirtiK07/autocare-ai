@@ -19,9 +19,9 @@ const record = {
   risk_band: "high",
   model_version: "pytorch-test",
   top_features: [
-    { feature: "lub_oil_pressure", label: "Lubricant oil pressure", value: 1.88, deviation: -1.97, direction: "low" },
-    { feature: "engine_rpm", label: "Engine RPM", value: 426, deviation: -1.29, direction: "low" },
-    { feature: "fuel_pressure", label: "Fuel pressure", value: 3.72, deviation: -0.8, direction: "low" },
+    { feature: "lub_oil_pressure", label: "Lubricant oil pressure", value: 1.88, impact: 0.12, deviation: -1.97, direction: "low" },
+    { feature: "engine_rpm", label: "Engine RPM", value: 426, impact: 0.08, deviation: -1.29, direction: "low" },
+    { feature: "fuel_pressure", label: "Fuel pressure", value: 3.72, impact: 0.02, deviation: -0.8, direction: "low" },
   ],
 };
 

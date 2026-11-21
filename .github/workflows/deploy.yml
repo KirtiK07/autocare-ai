@@ -1,12 +1,15 @@
 name: Deploy
 
-# Builds both images, pushes them to GHCR, then updates the EC2 host over SSH.
-# Required repository secrets: EC2_HOST, EC2_USER, EC2_SSH_KEY, LLM_API_KEY,
-# POSTGRES_PASSWORD, SITE_ADDRESS (your domain). Optional: LLM_PROVIDER.
-# The workflow is skipped until EC2_HOST is set, so CI stays green before AWS exists.
+# Deploys main to a Hugging Face Space (Docker, free CPU tier) after CI passes.
+# Setup (once): repository secret HF_TOKEN (a write token from huggingface.co/settings/tokens),
+# secret LLM_API_KEY (Groq), and repository variable HF_SPACE = "<hf-username>/autocare-ai".
+# Optional secret DATABASE_URL (e.g. free Neon Postgres) to keep history across restarts.
+# The job is skipped until HF_TOKEN exists, so CI stays green before then.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -14,115 +17,45 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
-permissions:
-  contents: read
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  OWNER: ${{ github.repository_owner }}
-
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    outputs:
-      enabled: ${{ steps.check.outputs.enabled }}
-    steps:
-      - id: check
-        env:
-          HOST: ${{ secrets.EC2_HOST }}
-        run: echo "enabled=$([ -n "$HOST" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-  build:
-    needs: check
-    if: needs.check.outputs.enabled == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.tags.outputs.backend }}
-      frontend: ${{ steps.tags.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: tags
-        run: |
-          owner=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
-          echo "backend=$REGISTRY/$owner/autocare-ai-backend:${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "frontend=$REGISTRY/$owner/autocare-ai-frontend:${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "owner=$owner" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: backend
-          push: true
-          tags: |
-            ${{ steps.tags.outputs.backend }}
-            ${{ env.REGISTRY }}/${{ steps.tags.outputs.owner }}/autocare-ai-backend:latest
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-      - uses: docker/build-push-action@v6
-        with:
-          context: frontend
-          push: true
-          build-args: VITE_REPO_URL=${{ github.server_url }}/${{ github.repository }}
-          tags: |
-            ${{ steps.tags.outputs.frontend }}
-            ${{ env.REGISTRY }}/${{ steps.tags.outputs.owner }}/autocare-ai-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
-
   deploy:
-    needs: build
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
-      - name: Write server .env
+      - name: Check configuration
+        id: cfg
         env:
-          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: echo "enabled=$([ -n "$HF_TOKEN" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        if: steps.cfg.outputs.enabled == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-python@v6
+        if: steps.cfg.outputs.enabled == 'true'
+        with:
+          python-version: "3.12"
+      - name: Upload to the Space
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          SITE_ADDRESS: ${{ secrets.SITE_ADDRESS }}
+          LLM_PROVIDER: groq
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          {
-            echo "BACKEND_IMAGE=${{ needs.build.outputs.backend }}"
-            echo "FRONTEND_IMAGE=${{ needs.build.outputs.frontend }}"
-            echo "LLM_PROVIDER=${LLM_PROVIDER:-groq}"
-            echo "LLM_API_KEY=$LLM_API_KEY"
-            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
-            echo "SITE_ADDRESS=$SITE_ADDRESS"
-            echo "CORS_ORIGINS=https://$SITE_ADDRESS"
-            echo "REPO_URL=${{ github.server_url }}/${{ github.repository }}"
-          } > deploy.env
-      - name: Copy compose file and env to the server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,deploy.env"
-          target: "~/autocare-ai"
-      - name: Pull and restart
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
-            cd ~/autocare-ai
-            mv deploy.env .env && chmod 600 .env
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
-      - name: Health check
+          pip install "huggingface_hub>=0.30"
+          python deploy/hf/push.py
+      - name: Wait for the Space to come up
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          HF_SPACE: ${{ vars.HF_SPACE }}
         run: |
-          for i in $(seq 1 30); do
-            if curl -fsS "https://${{ secrets.SITE_ADDRESS }}/api/health"; then exit 0; fi
-            sleep 10
+          url="https://$(echo "$HF_SPACE" | tr '/_' '--' | tr '[:upper:]' '[:lower:]').hf.space/api/health"
+          echo "Polling $url"
+          for i in $(seq 1 60); do
+            if curl -fsS "$url"; then echo; exit 0; fi
+            sleep 20
           done
-          echo "Health check failed" && exit 1
+          echo "Space did not become healthy in 20 minutes" && exit 1

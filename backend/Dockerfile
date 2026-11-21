@@ -13,7 +13,7 @@ RUN pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu \
 ENV HF_HOME=/opt/hf
 RUN python -c "from sentence_transformers import SentenceTransformer, CrossEncoder; \
 SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
-CrossEncoder('cross-encoder/nli-deberta-v3-xsmall')"
+CrossEncoder('cross-encoder/nli-deberta-v3-small')"
 
 # ---------- runtime ----------
 FROM python:3.12-slim

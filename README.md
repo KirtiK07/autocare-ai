@@ -2,68 +2,71 @@
 
 [![CI](https://github.com/KirtiK07/autocare-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/KirtiK07/autocare-ai/actions/workflows/ci.yml)
 
-**Predicts engine faults from sensor readings with a PyTorch model, then explains them in plain language with a RAG assistant that answers only from vehicle manuals and cites its sources.**
+**Predicts engine faults from sensor readings with a PyTorch model (benchmarked against scikit-learn), then explains them with a RAG assistant that answers only from vehicle manuals, cites the page, and flags or removes any sentence the manuals don't support.**
 
-**Live demo:** _add after deploy_ · **Walkthrough (3 min):** _add link_
-
-<!-- Replace with a 30-second GIF of the Diagnose page: docs/img/demo.gif -->
+**Live demo:** _Hugging Face Space link (after first deploy)_ · **Walkthrough (3 min):** _add link_
 
 ## What it does
 
 1. **Enter or upload engine sensor readings** (RPM, oil/fuel/coolant pressure, oil/coolant temperature), or load a healthy/faulty sample in one click.
-2. **Get a fault-risk score**: probability, a Low/Medium/High band, and the three readings that drove it.
-3. **Ask the assistant** what it means and what to check. Answers come only from retrieved manual text, cite `[source, page]`, and an NLI guardrail flags any sentence the manuals don't support. If the manuals don't cover a question, the assistant says so.
+2. **Get a fault-risk score**: probability, a Low/Medium/High band, and the three readings that pushed it up, measured in probability points by occlusion.
+3. **Ask the assistant** what it means and what to check. It retrieves passages from three public-domain US Army technical manuals plus a sensor glossary, answers with `[source, page]` citations, and an NLI guardrail underlines unsupported sentences or removes them. Off-topic questions are declined.
 
-Also included: batch CSV scoring (up to 1,000 rows), a prediction history with saved chats, and a Model page with the comparison table, confusion matrix, ROC curve and feature importance.
+Also included: batch CSV scoring (up to 1,000 rows), prediction history with saved chats, and a Model page with the comparison table, confusion matrix, ROC curve and feature importance.
 
 ## Architecture
 
 ```
-React UI ──▶ Caddy (HTTPS, /api proxy) ──▶ FastAPI ──▶ PostgreSQL   (predictions, chat)
-                                             │   ├──▶ Chroma        (manual chunks)
-                                             │   └──▶ Groq / Gemini (LLM, key server-side)
-                                             └── loads artifacts/ (model) + vectorstore/ at startup
-Offline: python -m ml.train   ·   python -m rag.ingest
+Production (Hugging Face Space, one container)      Local (docker compose)
+Browser ─▶ FastAPI ─┬─ /api/*  ─▶ services           Browser ─▶ Caddy ─┬─ static React app
+                    └─ /*      ─▶ built React app                      └─ /api ─▶ FastAPI ─▶ PostgreSQL
+
+FastAPI services: FaultPredictor (PyTorch / scikit-learn) · DiagnosticAgent ─┬─ ManualRetriever (Chroma)
+                                                                            ├─ LLMClient (Groq · Gemini · extractive)
+                                                                            └─ NLI guardrail
+Offline jobs: python -m ml.train · python -m rag.ingest · python -m rag.evaluate
 ```
 
-The FastAPI routes are thin. Business logic lives in service classes: `FaultPredictor`, `ManualRetriever`, `DiagnosticAgent`, and an abstract `LLMClient` with `GroqClient` / `GeminiClient`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Routes are thin; business logic lives in OOP service classes behind an abstract `LLMClient`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Tech stack
 
 | Layer | Tools |
 | --- | --- |
-| ML | Pandas, NumPy, scikit-learn, imbalanced-learn, PyTorch (CPU) |
-| RAG | LangChain, sentence-transformers (all-MiniLM-L6-v2), Chroma, NLI cross-encoder guardrail, Groq Llama 3.3 or Gemini |
-| Backend | FastAPI, Pydantic, SQLAlchemy 2, Alembic, PostgreSQL (SQLite for local dev/tests) |
-| Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui-style components, Recharts, TanStack Query |
-| Ops | Docker Compose, Caddy, GitHub Actions, GHCR, AWS EC2 |
+| ML | Python, Pandas, NumPy, scikit-learn, imbalanced-learn (SMOTE), PyTorch |
+| RAG / LLM | LangChain, sentence-transformers (MiniLM embeddings), Chroma vector DB, DeBERTa NLI guardrail, Groq (`gpt-oss-120b`) or Gemini |
+| Backend | FastAPI, Pydantic, SQLAlchemy 2, Alembic, SQL (PostgreSQL / SQLite) |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, Recharts, TanStack Query |
+| DevOps | Docker, Docker Compose, GitHub Actions CI/CD, Hugging Face Spaces |
 | Quality | pytest, Vitest, Playwright, ruff, black, mypy, ESLint, Prettier, pre-commit |
 
 ## Results
 
-> ⚠️ **The numbers below come from the synthetic stand-in dataset** (`scripts/download_data.py --synthetic`) that lets the pipeline run without Kaggle credentials. Retrain on the real dataset (`python scripts/download_data.py`, then `python -m ml.train`) and paste the new `backend/artifacts/results.md` here before quoting any number.
+**Fault model**: Kaggle *Automotive Vehicles Engine Health Dataset* (19,535 readings, 63% labelled faulty), held-out test set of 2,931 rows. Each threshold is tuned on validation for the highest precision with recall ≥ 0.85, and the served model has the best validation ROC-AUC.
 
-Test set (15% hold-out, 2,931 rows). Each model's threshold is tuned on validation for the highest precision with recall ≥ 0.85, because missing a real fault costs more than a false alarm. The served model is the one with the best validation F1.
+| Model | Imbalance strategy | Threshold | ROC-AUC | Balanced acc. | MCC | Accuracy | Precision | Recall | F1 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Dummy (majority) | none | 0.50 | 0.5000 | 0.5000 | 0.0000 | 0.6305 | 0.6305 | 1.0000 | 0.7734 |
+| Logistic Regression | smote | 0.38 | 0.6957 | 0.5975 | 0.2222 | 0.6602 | 0.6898 | 0.8377 | 0.7566 |
+| Random Forest | smote | 0.38 | 0.6968 | 0.5996 | 0.2275 | 0.6626 | 0.6910 | 0.8409 | 0.7586 |
+| Gradient Boosting | smote | 0.36 | 0.6962 | 0.5950 | 0.2213 | 0.6615 | 0.6872 | 0.8501 | 0.7600 |
+| **PyTorch EngineFaultNet** (served) | pos_weight | 0.37 | **0.7008** | 0.5996 | 0.2253 | 0.6609 | 0.6915 | 0.8344 | 0.7563 |
 
-| Model | Imbalance strategy | Threshold | Accuracy | Precision | Recall | F1 | ROC-AUC |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Dummy (majority) | none | 0.50 | 0.6240 | 0.6240 | 1.0000 | 0.7685 | 0.5000 |
-| Logistic Regression | smote | 0.35 | 0.6991 | 0.7220 | 0.8420 | 0.7774 | 0.7612 |
-| Random Forest | class_weight | 0.38 | 0.7049 | 0.7248 | 0.8496 | 0.7823 | 0.7706 |
-| **PyTorch EngineFaultNet** (served) | pos_weight | 0.32 | 0.7199 | 0.7400 | 0.8496 | 0.7910 | 0.7906 |
+The dataset is weakly separable: four very different models land within 0.005 ROC-AUC of each other. F1 isn't used to choose, because "always faulty" already scores 0.773. Balanced accuracy and MCC show the real gain over that baseline. Details are in the [model card](docs/MODEL_CARD.md).
 
-**RAG** (`python -m rag.evaluate`, 25 questions in `backend/eval/rag_questions.jsonl`): retrieval hit rate @5 = 1.00, fully supported answers = 1.00. The current corpus is only the 8-section sensor glossary, so this is an easy baseline. Re-run it after adding the manual PDFs.
+**RAG assistant** (`python -m rag.evaluate`: 25 domain questions + 5 off-topic, Groq `gpt-oss-120b`, NLI guardrail):
+
+| Metric | Result |
+| --- | --- |
+| Retrieval hit rate @5 (a top-5 passage contains the answer's key terms) | 100% (25/25) |
+| Domain questions answered (not declined by the guardrail) | 96% (24/25) |
+| Answers whose displayed sentences are all supported (after trimming) | 68% (17/25) |
+| Mean share of supported claims per answered question | 88% |
+| Off-topic questions declined | 100% (5/5) |
+
+Corpus: 3 public-domain manuals (TM 9-8000, TM 9-2858, TM 10-570) + sensor glossary → 2,903 chunks. The retrieval metric is keyword-based, so treat it as an upper bound.
 
 ## Quick start
-
-**Docker (whole stack):**
-
-```bash
-cp .env.example .env          # optionally add LLM_API_KEY (Groq or Gemini)
-docker compose up --build     # → http://localhost
-```
-
-**Local development:**
 
 ```bash
 # backend
@@ -71,45 +74,45 @@ cd backend
 python -m venv .venv && .venv/Scripts/activate       # macOS/Linux: source .venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements-dev.txt
-python scripts/download_data.py      # or --synthetic for offline dev
-python -m ml.train                   # trains, evaluates, writes artifacts/
-python -m rag.ingest                 # builds the Chroma store from knowledge/
+python scripts/download_data.py --csv path/to/engine_data.csv   # or plain (Kaggle API) / --synthetic
+python -m ml.train          # trains 5 models, writes artifacts/ + results table
+python -m rag.ingest        # indexes knowledge/ (PDFs + glossary) into Chroma
 alembic upgrade head
-uvicorn app.main:app --reload        # http://localhost:8000/api/docs
+uvicorn app.main:app --reload            # API docs: http://localhost:8000/api/docs
 
 # frontend (new terminal)
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
-No LLM key? The assistant runs in **extractive mode**: it quotes the most relevant manual sentences with citations instead of generating text.
+Put `LLM_API_KEY=<groq key>` in a root `.env` (copy `.env.example`). Without a key, the assistant runs in extractive mode and quotes the manuals directly.
 
+**Full stack in Docker:** `docker compose up --build` → http://localhost (Caddy + FastAPI + PostgreSQL).
+**Deploy:** push to `main` → CI → the Hugging Face Space updates automatically. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 **Tests:** `cd backend && pytest` · `cd frontend && npm test && npm run test:e2e`
 
 ## Project structure
 
 ```
 backend/
-  app/            FastAPI app: api/routes, services (OOP), db (SQLAlchemy + repositories), core (settings, DI, errors)
+  app/            FastAPI: api/routes, services (FaultPredictor, DiagnosticAgent, ManualRetriever, LLMClient, guardrail),
+                  db (SQLAlchemy models + repositories), core (settings, DI container, errors, rate limit)
   ml/             features.py (shared preprocessing), baselines.py, nets.py (PyTorch), evaluate.py, train.py
   rag/            ingest.py, store.py, evaluate.py
-  artifacts/      trained model, scaler, metrics (committed; small)
-  knowledge/      sensor_glossary.md, SOURCES.md, pdfs/ (manuals; not committed)
-  eval/           rag_questions.jsonl
-  notebooks/      01_eda.ipynb
-  alembic/        migrations
-  tests/          unit + integration (fake LLM, no paid API calls)
-frontend/         React + Vite app, Vitest unit tests, Playwright smoke test, Caddyfile
-docs/             ARCHITECTURE, MODEL_CARD, API, DEPLOYMENT, DECISIONS
-.github/workflows ci.yml (lint, types, tests, build) · deploy.yml (GHCR → EC2)
+  artifacts/      trained model, scaler, metrics, results.md, rag_eval.json
+  knowledge/      pdfs/ (public-domain manuals), sensor_glossary.md, SOURCES.md
+  eval/           rag_questions.jsonl     notebooks/ 01_eda.ipynb     alembic/     tests/
+frontend/         React app, Vitest unit tests, Playwright smoke test, Caddyfile (compose)
+deploy/hf/        Single-container Dockerfile, Space card, upload script
+docs/             ARCHITECTURE · MODEL_CARD · API · DEPLOYMENT · DECISIONS
 ```
 
 ## Limitations
 
-- The dataset holds single snapshot readings from an unspecified engine type and has no time series. The model can't see trends, noises, leaks or wear.
-- The "readings that drove this result" are deviations from the healthy average, not causal attributions.
-- The guardrail checks whether a sentence is entailed by retrieved text; it can't tell whether the manual is right, and it can miss claims that combine several passages.
+- Snapshot readings from an unspecified engine type; no time series, so the model can't see trends, noises, leaks or wear.
+- The manuals are military and older vehicle references. The principles carry over, but a specific vehicle's owner's manual takes precedence.
+- The guardrail can't verify whether a manual is right, and NLI models occasionally entail false claims (1 of 5 in our hand-made test).
 - This is a portfolio project, **not a substitute for a qualified mechanic**.
 
 ## Licence
 
-MIT for the code. Datasets and manuals keep their own licences (see `backend/data/README.md` and `backend/knowledge/SOURCES.md`).
+MIT for the code. The manuals are US government works (public domain); the dataset keeps its Kaggle licence. See `backend/knowledge/SOURCES.md` and `backend/data/README.md`.

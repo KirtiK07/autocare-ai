@@ -27,6 +27,10 @@ class FeatureContribution(BaseModel):
     feature: str
     label: str
     value: float
+    impact: float = Field(
+        default=0.0,
+        description="Fault-probability change caused by this reading vs a typical healthy value (occlusion)",
+    )
     deviation: float = Field(description="Signed distance from the healthy mean, in std units")
     direction: Literal["high", "low"]
 

@@ -78,3 +78,15 @@ def test_split_keeps_trailing_citation() -> None:
         "B is high [S, page 2].",
         "C.",
     ]
+
+
+def test_mostly_unsupported_answer_is_trimmed_not_refused() -> None:
+    llm = FakeLLM(
+        "Low oil pressure can mean the oil level is low [Owner's Manual, page 42]. "
+        "Replace the turbocharger wastegate actuator immediately. "
+        "Recalibrate the transmission solenoids every month."
+    )
+    ans = DiagnosticAgent(FakeRetriever(), llm, LexicalGuardrail()).answer("Why low oil pressure?")
+    assert ans.covered
+    assert "turbocharger" not in ans.answer and "oil level is low" in ans.answer
+    assert "removed 2 sentences" in ans.answer

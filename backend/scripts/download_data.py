@@ -61,7 +61,7 @@ def from_kaggle() -> None:
 
 def from_csv(path: Path) -> None:
     shutil.copy(path, TARGET)
-    _write_meta("manual", name=path.name, url=KAGGLE_URL)
+    _write_meta("kaggle (manual download)", name="Automotive Vehicles Engine Health Dataset", url=KAGGLE_URL)
 
 
 def synthetic(rows: int = 19_535, seed: int = 7) -> None:

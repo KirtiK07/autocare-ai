@@ -1,25 +1,30 @@
-{"question": "What does low oil pressure usually mean?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
-{"question": "The oil pressure warning light came on while driving. What should I do?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
-{"question": "Why would oil pressure be too high?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
-{"question": "Can a worn oil pump cause low oil pressure?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
-{"question": "What causes an engine to overheat?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
-{"question": "The temperature warning light is on. What should I do first?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
-{"question": "Why does my coolant temperature stay low and the heater is weak?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
-{"question": "Where should the coolant temperature gauge sit once the engine is warm?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
-{"question": "Is it safe to open the radiator cap when the engine is hot?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
-{"question": "What does low coolant pressure indicate?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
-{"question": "Bubbles in the expansion tank: what could that mean?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
-{"question": "Why is the cooling system pressurised?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
-{"question": "What are symptoms of low fuel pressure?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
-{"question": "What happens if fuel pressure is too high?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
-{"question": "I can smell fuel near the engine. Is that dangerous?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
-{"question": "Could a clogged fuel filter cause hesitation under load?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
-{"question": "Why does oil temperature run hotter than normal?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
-{"question": "Is it bad if the oil never gets warm on short trips?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
-{"question": "How often should engine oil and the filter be changed?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
-{"question": "My idle speed keeps hunting up and down. What causes that?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
-{"question": "Why is my idle RPM high after the engine has warmed up?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
-{"question": "Why does oil pressure drop at low engine speed?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
-{"question": "Oil and coolant temperatures are far apart. What does that suggest?", "expected_source": "AutoCare sensor glossary: Oil versus coolant temperature"}
-{"question": "Is the AutoCare risk score the same as a mechanic's inspection?", "expected_source": "AutoCare sensor glossary: Reading an AutoCare risk score"}
-{"question": "My risk score is high. What should I check first?", "expected_source": "AutoCare sensor glossary: Reading an AutoCare risk score"}
+{"question": "What does low oil pressure usually mean?", "expected_keywords": ["oil pressure"]}
+{"question": "The oil pressure warning light came on while driving. What should I do?", "expected_keywords": ["oil pressure"]}
+{"question": "Why would oil pressure be too high?", "expected_keywords": ["oil pressure", "relief valve"]}
+{"question": "What does the oil pump do?", "expected_keywords": ["oil pump"]}
+{"question": "Why does an engine need lubrication?", "expected_keywords": ["lubricat"]}
+{"question": "What causes an engine to overheat?", "expected_keywords": ["overheat"]}
+{"question": "The temperature warning light is on. What should I do first?", "expected_keywords": ["temperature"]}
+{"question": "What does the thermostat do in the cooling system?", "expected_keywords": ["thermostat"]}
+{"question": "What happens if the thermostat sticks closed?", "expected_keywords": ["thermostat"]}
+{"question": "Is it safe to open the radiator cap when the engine is hot?", "expected_keywords": ["radiator cap", "pressure cap", "cap"]}
+{"question": "Why is the cooling system pressurised?", "expected_keywords": ["pressure cap", "pressure"]}
+{"question": "What does antifreeze do?", "expected_keywords": ["antifreeze"]}
+{"question": "How does the water pump circulate coolant?", "expected_keywords": ["water pump"]}
+{"question": "What can cause coolant loss?", "expected_keywords": ["leak", "coolant loss", "overflow"]}
+{"question": "What are symptoms of low fuel pressure?", "expected_keywords": ["fuel pressure", "fuel pump"]}
+{"question": "What does the fuel pump do?", "expected_keywords": ["fuel pump"]}
+{"question": "Could a clogged fuel filter cause the engine to lose power?", "expected_keywords": ["fuel filter", "filter"]}
+{"question": "Why does oil temperature run hotter than normal?", "expected_keywords": ["oil temperature", "oil cooler", "temperature"]}
+{"question": "Why should engine oil be changed regularly?", "expected_keywords": ["oil change", "change", "drain"]}
+{"question": "What does an oil cooler do?", "expected_keywords": ["oil cooler"]}
+{"question": "My idle speed keeps hunting up and down. What causes that?", "expected_keywords": ["idle"]}
+{"question": "How does a four-stroke engine work?", "expected_keywords": ["four-stroke", "stroke"]}
+{"question": "What is the job of the fan in the cooling system?", "expected_keywords": ["fan"]}
+{"question": "Oil and coolant temperatures are far apart. What does that suggest?", "expected_keywords": ["temperature"]}
+{"question": "Is the AutoCare risk score the same as a mechanic's inspection?", "expected_keywords": ["risk score"]}
+{"question": "What is the capital of France?", "should_refuse": true}
+{"question": "Who won the football world cup in 2018?", "should_refuse": true}
+{"question": "Write me a poem about the ocean.", "should_refuse": true}
+{"question": "What is the best smartphone to buy?", "should_refuse": true}
+{"question": "How do I bake sourdough bread?", "should_refuse": true}

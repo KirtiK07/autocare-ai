@@ -32,11 +32,13 @@ function ComparisonTable({ m }: { m: ModelMetrics }) {
           <Th>Model</Th>
           <Th>Imbalance</Th>
           <Th className="text-right">Threshold</Th>
+          <Th className="text-right">ROC-AUC</Th>
+          <Th className="text-right">Balanced acc.</Th>
+          <Th className="text-right">MCC</Th>
           <Th className="text-right">Accuracy</Th>
           <Th className="text-right">Precision</Th>
           <Th className="text-right">Recall</Th>
           <Th className="text-right">F1</Th>
-          <Th className="text-right">ROC-AUC</Th>
         </tr>
       </thead>
       <tbody>
@@ -48,7 +50,16 @@ function ComparisonTable({ m }: { m: ModelMetrics }) {
                 {r.name} {served && <Badge className="ml-1 bg-accent-100 text-accent-700 ring-accent-100">served</Badge>}
               </Td>
               <Td className="text-slate-500">{r.strategy}</Td>
-              {[r.test.threshold, r.test.accuracy, r.test.precision, r.test.recall, r.test.f1, r.test.roc_auc].map((v, i) => (
+              {[
+                r.test.threshold,
+                r.test.roc_auc,
+                r.test.balanced_accuracy,
+                r.test.mcc,
+                r.test.accuracy,
+                r.test.precision,
+                r.test.recall,
+                r.test.f1,
+              ].map((v, i) => (
                 <Td key={i} className="text-right">
                   {i === 0 ? v.toFixed(2) : f4(v)}
                 </Td>
@@ -127,7 +138,7 @@ export function ModelPage() {
         <Card>
           <CardHeader
             title="Model comparison"
-            description={`Held-out test set. Each threshold is tuned on validation for recall ≥ ${m.min_recall} (missing a fault costs more than a false alarm); the served model has the best validation F1.`}
+            description={`Held-out test set. Each threshold is tuned on validation for recall ≥ ${m.min_recall} (missing a fault costs more than a false alarm); the served model has the best validation ROC-AUC. F1 is shown but not used to choose: with faults as the majority class, always predicting "faulty" already scores F1 0.77, so balanced accuracy and MCC are the fairer comparison.`}
           />
           <ComparisonTable m={m} />
         </Card>
@@ -215,14 +226,15 @@ export function ModelPage() {
               and the API load the same saved preprocessor, so they never drift.
             </p>
             <p>
-              Baselines (Dummy, Logistic Regression, Random Forest) are tuned with 5-fold stratified cross-validation, comparing class
-              weighting against SMOTE inside the pipeline. The PyTorch network (12 → 64 → 32 → 1, BatchNorm, dropout 0.2) trains with Adam
-              and early stopping on validation loss
+              Baselines (Dummy, Logistic Regression, Random Forest, Gradient Boosting) are tuned with ROC-AUC scoring and 5-fold stratified
+              cross-validation, comparing class weighting against SMOTE inside the pipeline. The PyTorch network (12 → 64 → 32 → 1,
+              BatchNorm, dropout 0.2) trains with Adam and early stopping on validation loss
               {m.training_history.length ? ` (stopped after ${m.training_history.length} epochs)` : ""}.
             </p>
             <p>
-              The "readings that drove this result" on the Diagnose page are each sensor's distance from the healthy-engine average in
-              standard deviations, so they are easy to read but are not causal attributions.
+              The "readings that drove this result" on the Diagnose page come from occlusion: each sensor is reset to a typical healthy
+              value and the change in fault probability is measured. This is faithful to the model, but it reflects the model's
+              associations, not mechanical cause and effect.
             </p>
           </CardBody>
         </Card>

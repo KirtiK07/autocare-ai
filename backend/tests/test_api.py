@@ -66,3 +66,32 @@ def test_model_endpoints(client: TestClient) -> None:
     assert {x["key"] for x in m["models"]} >= {"dummy", "pytorch"}
     info = client.get("/api/model/info").json()
     assert set(info["samples"]) == {"healthy", "faulty"}
+
+
+def test_spa_served_when_static_dir_set(tmp_path, predictor) -> None:  # type: ignore[no-untyped-def]
+    from app.core.config import Settings
+    from app.main import create_app
+    from tests.conftest import FakeLLM, FakeRetriever
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<html>spa</html>", encoding="utf-8")
+    (tmp_path / "assets" / "app.js").write_text("console.log(1)", encoding="utf-8")
+    from app.core.container import Container
+    from app.db.base import Base, make_engine, make_session_factory
+    from app.services.diagnostic_agent import DiagnosticAgent
+    from app.services.guardrail import NoGuardrail
+
+    def factory(s: Settings) -> Container:
+        engine = make_engine("sqlite://")
+        Base.metadata.create_all(engine)
+        r, llm, g = FakeRetriever(), FakeLLM(), NoGuardrail()
+        return Container(
+            s, engine, make_session_factory(engine), predictor, r, llm, g, DiagnosticAgent(r, llm, g)
+        )
+
+    app = create_app(Settings(database_url="sqlite://", static_dir=tmp_path), factory)
+    with TestClient(app) as c:
+        assert c.get("/history").text == "<html>spa</html>"
+        assert c.get("/assets/app.js").text == "console.log(1)"
+        assert c.get("/api/health").json()["model_loaded"]
+        assert c.get("/api/nope").status_code == 404

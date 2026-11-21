@@ -3,8 +3,9 @@
     python -m rag.evaluate            # retrieval hit rate + guardrail support share
     python -m rag.evaluate --no-llm   # retrieval only (fast, no LLM calls)
 
-Each line: {"question": "...", "expected_source": "<source title>", "expected_page": 12?}
-A hit means a chunk from the expected source (and page, if given) is in the top k.
+Each line: {"question": "...", "expected_keywords": ["thermostat", ...]}  or
+           {"question": "...", "should_refuse": true}   (off-topic; the assistant must decline)
+A retrieval hit means a top-k chunk contains one of the expected keywords.
 Results are written to artifacts/rag_eval.json for the README.
 """
 
@@ -31,36 +32,49 @@ def run(use_llm: bool) -> dict[str, Any]:
     questions = load_questions(EVAL_FILE)
     rows: list[dict[str, Any]] = []
     for q in questions:
+        refuse = bool(q.get("should_refuse"))
         chunks = c.retriever.search(q["question"], settings.retrieval_k)
-        hit = any(
-            ch.source == q["expected_source"] and ("expected_page" not in q or ch.page == q["expected_page"])
-            for ch in chunks
-        )
+        keywords = [k.lower() for k in q.get("expected_keywords", [])]
+        hit = (not refuse) and any(k in ch.text.lower() for ch in chunks for k in keywords)
         row: dict[str, Any] = {
             "question": q["question"],
+            "should_refuse": refuse,
             "hit": hit,
             "retrieved": [ch.citation for ch in chunks],
         }
         if use_llm:
             ans = c.agent.answer(q["question"])
+            claims = [v for v in ans.sentences if v.score is not None]
             row |= {
                 "covered": ans.covered,
                 "fully_supported": ans.covered and ans.supported,
+                "claim_support": (sum(v.supported for v in claims) / len(claims)) if claims else None,
                 "answer": ans.answer,
             }
         rows.append(row)
 
-    n = len(rows)
+    answerable = [r for r in rows if not r["should_refuse"]]
+    off_topic = [r for r in rows if r["should_refuse"]]
+    n = len(answerable)
     summary: dict[str, Any] = {
-        "questions": n,
+        "answerable_questions": n,
+        "off_topic_questions": len(off_topic),
         "k": settings.retrieval_k,
-        "hit_rate_at_k": round(sum(r["hit"] for r in rows) / n, 4),
+        "retrieval_hit_rate_at_k": round(sum(r["hit"] for r in answerable) / n, 4),
         "llm": c.llm.name if use_llm else None,
         "guardrail": c.guardrail.name if use_llm else None,
     }
     if use_llm:
-        summary["fully_supported_share"] = round(sum(r["fully_supported"] for r in rows) / n, 4)
-        summary["covered_share"] = round(sum(r["covered"] for r in rows) / n, 4)
+        covered = [r for r in answerable if r["covered"]]
+        scored = [r["claim_support"] for r in covered if r["claim_support"] is not None]
+        summary |= {
+            "answered_share": round(len(covered) / n, 4),
+            "fully_supported_share": round(sum(r["fully_supported"] for r in answerable) / n, 4),
+            "mean_claim_support_when_answered": round(sum(scored) / len(scored), 4) if scored else None,
+            "off_topic_refusal_rate": (
+                round(sum(not r["covered"] for r in off_topic) / len(off_topic), 4) if off_topic else None
+            ),
+        }
     out = settings.artifacts_dir / "rag_eval.json"
     out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=2), encoding="utf-8")
     return summary

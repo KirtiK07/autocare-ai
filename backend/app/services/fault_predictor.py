@@ -75,18 +75,22 @@ class FaultPredictor:
         if not readings:
             return []
         df = pd.DataFrame([r.model_dump() for r in readings])[SENSOR_COLUMNS]
-        proba = self._proba(self.preprocessor.transform(df))
+        proba = np.clip(self._proba(self.preprocessor.transform(df)), 0.0, 1.0)
         deviations = self.preprocessor.deviations(df)
+        impacts = self._occlusion_impacts(df, proba)
         out: list[Prediction] = []
         for i, p in enumerate(proba):
-            p = float(np.clip(p, 0.0, 1.0))
+            p = float(p)
             dev = deviations.iloc[i]
-            top = dev.abs().sort_values(ascending=False).index[: self.top_k]
+            impact = impacts.iloc[i]
+            # Rank by how much each reading pushes the probability up (toward "faulty").
+            top = impact.sort_values(ascending=False).index[: self.top_k]
             contributions = [
                 FeatureContribution(
                     feature=f,
                     label=SENSOR_LABELS[f],
                     value=float(df.iloc[i][f]),
+                    impact=round(float(impact[f]), 4),
                     deviation=round(float(dev[f]), 3),
                     direction="high" if dev[f] >= 0 else "low",
                 )
@@ -102,6 +106,25 @@ class FaultPredictor:
                 )
             )
         return out
+
+    def _occlusion_impacts(self, df: pd.DataFrame, proba: np.ndarray) -> pd.DataFrame:
+        """Model-faithful local attribution by occlusion.
+
+        For each sensor, replace its value with the healthy-class mean and re-score;
+        impact = original probability - probability with that sensor "made healthy".
+        Positive impact means the reading pushes the prediction toward "faulty".
+        """
+        healthy = self.preprocessor.healthy_mean
+        frames = []
+        for col in SENSOR_COLUMNS:
+            masked = df.copy()
+            masked[col] = healthy[col]
+            frames.append(masked)
+        stacked = pd.concat(frames, ignore_index=True)
+        masked_proba = np.clip(self._proba(self.preprocessor.transform(stacked)), 0.0, 1.0)
+        n = len(df)
+        data = {col: proba - masked_proba[j * n : (j + 1) * n] for j, col in enumerate(SENSOR_COLUMNS)}
+        return pd.DataFrame(data)
 
     # -------------------------------------------------------------- metadata
     def samples(self) -> dict[str, dict[str, float]]:

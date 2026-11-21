@@ -30,10 +30,23 @@ def test_batch_matches_single(predictor: FaultPredictor) -> None:
 
 @needs_artifacts
 def test_model_beats_dummy_baseline() -> None:
-    """Model sanity gate: the served model must beat the majority-class F1 on test."""
+    """Model sanity gate: the served model must clearly beat chance / the majority-class baseline.
+
+    F1 is not compared: when faults are the majority class, "always faulty" already has a high F1.
+    """
     metrics = json.loads((ARTIFACTS / "metrics.json").read_text(encoding="utf-8"))
     by_key = {m["key"]: m for m in metrics["models"]}
     served = by_key[metrics["served_model"]]["test"]
     dummy = by_key["dummy"]["test"]
-    assert served["f1"] > dummy["f1"]
-    assert served["roc_auc"] > 0.6
+    assert served["roc_auc"] > dummy["roc_auc"] + 0.1
+    assert served["balanced_accuracy"] > dummy["balanced_accuracy"] + 0.05
+    assert served["mcc"] > 0.1
+
+
+@needs_artifacts
+def test_occlusion_impacts_explain_probability(predictor: FaultPredictor) -> None:
+    p = predictor.predict(SensorReading(**predictor.samples()["faulty"]))
+    impacts = [f.impact for f in p.top_features]
+    assert impacts == sorted(impacts, reverse=True)
+    assert impacts[0] > 0  # the top driver raises the fault probability
+    assert all(abs(i) <= 1 for i in impacts)

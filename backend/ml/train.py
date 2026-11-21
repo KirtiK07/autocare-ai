@@ -20,7 +20,7 @@ import pandas as pd
 import torch
 import yaml
 
-from ml.baselines import fit_dummy, fit_logistic, fit_random_forest
+from ml.baselines import fit_dummy, fit_gradient_boosting, fit_logistic, fit_random_forest
 from ml.data import dataset_info, load_dataset, split
 from ml.evaluate import classification_metrics, permutation_importance, roc_points, tune_threshold
 from ml.features import FEATURE_COLUMNS, SENSOR_COLUMNS, Preprocessor
@@ -86,7 +86,12 @@ def run(config_path: Path) -> dict[str, Any]:
         }
     )
 
-    for key, fit in (("logistic_regression", fit_logistic), ("random_forest", fit_random_forest)):
+    baselines = (
+        ("logistic_regression", fit_logistic),
+        ("random_forest", fit_random_forest),
+        ("gradient_boosting", fit_gradient_boosting),
+    )
+    for key, fit in baselines:
         log.info("Fitting %s ...", key)
         res = fit(Xtr, ytr, imbalanced, seed)
         models[key] = res.estimator
@@ -97,7 +102,7 @@ def run(config_path: Path) -> dict[str, Any]:
                 "key": key,
                 "name": res.name,
                 "strategy": res.strategy,
-                "cv_f1": res.cv_f1,
+                "cv_roc_auc": res.cv_auc,
                 "params": {k.replace("clf__", ""): v for k, v in res.best_params.items()},
                 "val": classification_metrics(yva, pv, t),
                 "test": classification_metrics(yte, res.estimator.predict_proba(Xte)[:, 1], t),
@@ -133,12 +138,13 @@ def run(config_path: Path) -> dict[str, Any]:
         }
     )
 
-    # Model selection uses validation F1 only; the test set is for reporting.
+    # Model selection uses validation ROC-AUC (threshold-free); the test set is only for reporting.
+    # F1 is not used: with faults as the majority class, "always faulty" already scores a high F1.
     candidates = [r for r in results if r["key"] != "dummy"]
-    served = max(candidates, key=lambda r: r["val"]["f1"])
+    served = max(candidates, key=lambda r: r["val"]["roc_auc"])
     served_key = served["key"]
     threshold = float(served["val"]["threshold"])
-    log.info("Served model: %s (val F1 %.4f)", served_key, served["val"]["f1"])
+    log.info("Served model: %s (val ROC-AUC %.4f)", served_key, served["val"]["roc_auc"])
 
     def proba_fn(X: np.ndarray) -> np.ndarray:
         if served_key == "pytorch":
@@ -210,14 +216,15 @@ def run(config_path: Path) -> dict[str, Any]:
 def results_table(results: list[dict[str, Any]]) -> str:
     """Markdown table of test-set metrics, exactly as measured (4 d.p.)."""
     lines = [
-        "| Model | Imbalance strategy | Threshold | Accuracy | Precision | Recall | F1 | ROC-AUC |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Model | Imbalance strategy | Threshold | ROC-AUC | Balanced acc. | MCC | Accuracy | Precision | Recall | F1 |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for r in results:
         m = r["test"]
         lines.append(
-            f"| {r['name']} | {r['strategy']} | {m['threshold']:.2f} | {m['accuracy']:.4f} | "
-            f"{m['precision']:.4f} | {m['recall']:.4f} | {m['f1']:.4f} | {m['roc_auc']:.4f} |"
+            f"| {r['name']} | {r['strategy']} | {m['threshold']:.2f} | {m['roc_auc']:.4f} | "
+            f"{m['balanced_accuracy']:.4f} | {m['mcc']:.4f} | {m['accuracy']:.4f} | "
+            f"{m['precision']:.4f} | {m['recall']:.4f} | {m['f1']:.4f} |"
         )
     return "\n".join(lines)
 

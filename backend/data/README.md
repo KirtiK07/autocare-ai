@@ -16,8 +16,8 @@ The script writes `data/raw/engine_data.csv` and an `engine_data.meta.json` that
 | --- | --- |
 | Name | Automotive Vehicles Engine Health Dataset |
 | Link | https://www.kaggle.com/datasets/parvmodi/automotive-vehicles-engine-health-dataset |
-| Licence | _check on the Kaggle page and record here_ |
-| Rows | _fill in after download (the script prints it)_ |
+| Licence | See the Kaggle dataset page (record the licence shown there before redistributing data) |
+| Rows | 19,535 (19,535 after de-duplication); 63.05% labelled 1 |
 | Columns | Engine rpm, Lub oil pressure, Fuel pressure, Coolant pressure, lub oil temp, Coolant temp, Engine Condition |
 | Label | `Engine Condition` (1 = needs attention; set `positive_label` in `configs/train.yaml` if your copy differs) |
 

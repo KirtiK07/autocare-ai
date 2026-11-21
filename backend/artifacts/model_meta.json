@@ -2,7 +2,6 @@
   "model_version": "pytorch-2026-11-21",
   "served_model": "pytorch",
   "served_model_name": "PyTorch EngineFaultNet",
-  "sklearn_model": "random_forest",
   "feature_order": [
     "engine_rpm",
     "lub_oil_pressure",
@@ -25,10 +24,10 @@
     "lub_oil_temp",
     "coolant_temp"
   ],
-  "threshold": 0.32,
+  "threshold": 0.37,
   "risk_bands": {
-    "medium": 0.192,
-    "high": 0.32
+    "medium": 0.222,
+    "high": 0.37
   },
   "n_features": 12,
   "pytorch": {
@@ -38,87 +37,89 @@
     ],
     "dropout": 0.2
   },
-  "trained_at": "2026-11-21T14:49:17+00:00",
+  "trained_at": "2026-11-21T16:12:22+00:00",
   "dataset": {
-    "source": "synthetic",
-    "fetched_at": "2026-11-21T14:42:47+00:00",
-    "name": "Synthetic stand-in (scripts/download_data.py --synthetic)",
-    "url": "",
+    "source": "kaggle (manual download)",
+    "fetched_at": "2026-11-21T16:05:06+00:00",
+    "name": "Automotive Vehicles Engine Health Dataset",
+    "url": "https://www.kaggle.com/datasets/parvmodi/automotive-vehicles-engine-health-dataset",
     "rows": 19535,
-    "fault_share": 0.624
+    "fault_share": 0.6305
   },
   "test_metrics": {
-    "threshold": 0.32,
-    "accuracy": 0.7198908222449676,
-    "precision": 0.74,
-    "recall": 0.8496446145434664,
-    "f1": 0.7910409773479257,
-    "roc_auc": 0.7906024039000614,
+    "threshold": 0.37,
+    "accuracy": 0.6608665984305697,
+    "precision": 0.6914798206278027,
+    "recall": 0.8344155844155844,
+    "f1": 0.7562530652280529,
+    "balanced_accuracy": 0.5995715964552529,
+    "mcc": 0.2253301144268552,
+    "roc_auc": 0.7007620726457291,
     "confusion_matrix": [
       [
-        556,
-        546
+        395,
+        688
       ],
       [
-        275,
-        1554
+        306,
+        1542
       ]
     ]
   },
   "samples": {
     "healthy": {
-      "engine_rpm": 740.0,
-      "lub_oil_pressure": 4.678,
-      "fuel_pressure": 4.699,
-      "coolant_pressure": 2.236,
-      "lub_oil_temp": 74.881,
-      "coolant_temp": 69.453
+      "engine_rpm": 1200.0,
+      "lub_oil_pressure": 3.006,
+      "fuel_pressure": 6.657,
+      "coolant_pressure": 3.155,
+      "lub_oil_temp": 76.895,
+      "coolant_temp": 85.313
     },
     "faulty": {
-      "engine_rpm": 426.0,
-      "lub_oil_pressure": 1.881,
-      "fuel_pressure": 3.721,
-      "coolant_pressure": 2.25,
-      "lub_oil_temp": 75.358,
-      "coolant_temp": 77.35
+      "engine_rpm": 734.0,
+      "lub_oil_pressure": 3.893,
+      "fuel_pressure": 6.837,
+      "coolant_pressure": 1.641,
+      "lub_oil_temp": 75.852,
+      "coolant_temp": 74.574
     }
   },
   "sensor_ranges": {
     "engine_rpm": {
-      "min": 62.0,
-      "max": 2300.0,
-      "healthy_p05": 376.0,
-      "healthy_p95": 1526.0
+      "min": 61.0,
+      "max": 2239.0,
+      "healthy_p05": 516.0,
+      "healthy_p95": 1411.0
     },
     "lub_oil_pressure": {
-      "min": 0.01,
-      "max": 7.3,
-      "healthy_p05": 2.183,
-      "healthy_p95": 5.305
+      "min": 0.003,
+      "max": 7.266,
+      "healthy_p05": 1.907,
+      "healthy_p95": 4.962
     },
     "fuel_pressure": {
-      "min": 0.119,
-      "max": 21.0,
-      "healthy_p05": 2.154,
-      "healthy_p95": 11.748
+      "min": 0.003,
+      "max": 21.138,
+      "healthy_p05": 2.708,
+      "healthy_p95": 11.63
     },
     "coolant_pressure": {
-      "min": 0.01,
-      "max": 5.923,
-      "healthy_p05": 0.905,
-      "healthy_p95": 4.025
+      "min": 0.002,
+      "max": 7.479,
+      "healthy_p05": 1.069,
+      "healthy_p95": 4.663
     },
     "lub_oil_temp": {
-      "min": 71.0,
-      "max": 90.0,
-      "healthy_p05": 72.762,
-      "healthy_p95": 81.259
+      "min": 71.322,
+      "max": 89.581,
+      "healthy_p05": 74.532,
+      "healthy_p95": 85.486
     },
     "coolant_temp": {
-      "min": 61.0,
-      "max": 105.789,
-      "healthy_p05": 69.423,
-      "healthy_p95": 85.81
+      "min": 61.673,
+      "max": 195.528,
+      "healthy_p05": 69.15,
+      "healthy_p95": 88.68
     }
   }
 }

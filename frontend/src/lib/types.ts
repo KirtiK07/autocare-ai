@@ -8,6 +8,7 @@ export interface FeatureContribution {
   feature: SensorKey;
   label: string;
   value: number;
+  impact: number;
   deviation: number;
   direction: "high" | "low";
 }
@@ -124,6 +125,8 @@ export interface ModelMetricsRow {
   recall: number;
   f1: number;
   roc_auc: number;
+  balanced_accuracy: number;
+  mcc: number;
   threshold: number;
   confusion_matrix: number[][];
 }
@@ -133,7 +136,7 @@ export interface ModelResult {
   name: string;
   strategy: string;
   params: Record<string, unknown>;
-  cv_f1?: number;
+  cv_roc_auc?: number;
   val: ModelMetricsRow;
   test: ModelMetricsRow;
 }

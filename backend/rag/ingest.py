@@ -38,6 +38,12 @@ def source_titles(knowledge_dir: Path) -> dict[str, str]:
     return titles
 
 
+def _noise_ratio(text: str) -> float:
+    """Share of characters that are neither letters, digits, whitespace nor common punctuation."""
+    ok = sum(c.isalnum() or c.isspace() or c in ".,;:()'\"-/%°" for c in text)
+    return 1 - ok / max(1, len(text))
+
+
 def load_pdfs(knowledge_dir: Path) -> list[Document]:
     from langchain_community.document_loaders import PyPDFLoader
 
@@ -46,9 +52,10 @@ def load_pdfs(knowledge_dir: Path) -> list[Document]:
     for pdf in sorted((knowledge_dir / "pdfs").glob("*.pdf")):
         name = titles.get(pdf.name, pdf.stem.replace("_", " ").replace("-", " "))
         for page in PyPDFLoader(str(pdf)).load():
-            text = " ".join(page.page_content.split())
-            if len(text) < 40:
-                continue
+            # Join words split across line ends by OCR/hyphenation ("over- heating").
+            text = re.sub(r"(?<=[a-z])- (?=[a-z])", "", " ".join(page.page_content.split()))
+            if len(text) < 200 or _noise_ratio(text) > 0.25:
+                continue  # blank pages, figure-only pages, badly OCR'd scans
             docs.append(
                 Document(
                     page_content=text,

@@ -14,6 +14,13 @@ _CITATION = re.compile(r"\[[^\]]+\]")
 _SENTENCE_SPLIT = re.compile(r"(?:(?<=[.!?])|(?<=[.!?]\]))\s+(?=[A-Z0-9\"'(])|(?<=\])\s+(?=[A-Z])")
 # Sentences that are advice/disclaimers by design, not factual claims from the manual.
 _WORD = re.compile(r"[a-z0-9]{3,}")
+# Recommendations ("Check the coolant level first.") are advice, not factual claims a
+# passage can entail; they are shown but excluded from the support score.
+_ADVICE = re.compile(
+    r"^(please\s+)?(check|inspect|verify|ensure|make sure|stop|refill|top up|replace|have|look|let|turn|"
+    r"switch|allow|avoid|do not|don't|never|always|consider|keep|start|begin|if|then|after|before|once)",
+    re.I,
+)
 _EXEMPT = re.compile(r"qualified (mechanic|technician)|not covered in the manuals|consult|professional", re.I)
 
 
@@ -39,26 +46,49 @@ def split_sentences(answer: str) -> list[str]:
     return parts
 
 
-class NLIGuardrail:
-    """Cross-encoder NLI: a sentence is supported if some chunk entails it.
+def premise_windows(contexts: list[str], max_len: int = 3) -> list[str]:
+    """Sliding windows of 1..max_len consecutive sentences from each retrieved chunk.
 
-    Uses the max entailment probability over retrieved chunks. A near-verbatim
-    quote of one chunk (>= 90% of its words) also counts as supported, because NLI
-    models often label definitional sentences ("X is the Y that ...") as neutral
-    even when copied word for word. It can miss claims that need several chunks
-    combined, and it cannot judge whether the manual itself is correct.
+    NLI models are trained on sentence-length premises; scoring a claim against a whole
+    800-character chunk gives near-zero entailment even for close paraphrases.
+    """
+    out: list[str] = []
+    for ctx in contexts:
+        sents = [s for s in re.split(r"(?<=[.!?])\s+", " ".join(ctx.split())) if len(s) > 15]
+        for k in range(1, max_len + 1):
+            out += [" ".join(sents[i : i + k]) for i in range(len(sents) - k + 1)]
+    return out
+
+
+def _overlap(claim_words: set[str], text: str) -> float:
+    words = set(_WORD.findall(text.lower()))
+    return len(claim_words & words) / (len(claim_words) or 1)
+
+
+class NLIGuardrail:
+    """Cross-encoder NLI: a sentence is supported if some passage window entails it.
+
+    Each claim is scored against the ``top_windows`` sentence windows (1-3 sentences)
+    that share the most words with it; the max entailment probability decides. A
+    near-verbatim quote (>= 90% of its words in one chunk) also counts as supported.
+    It can miss claims that combine passages far apart, and it cannot judge whether
+    the manual itself is correct.
     """
 
     name = "nli"
     QUOTE_COVERAGE = 0.9
+    PARAPHRASE_OVERLAP = 0.6  # share of claim words found in one window
+    CONTRADICTION_MAX = 0.5
 
-    def __init__(self, model_name: str, threshold: float = 0.5):
+    def __init__(self, model_name: str, threshold: float = 0.5, top_windows: int = 12):
         from sentence_transformers import CrossEncoder
 
         self.model = CrossEncoder(model_name, device="cpu")
         self.threshold = threshold
+        self.top_windows = top_windows
         labels = {str(v).lower(): int(k) for k, v in (self.model.config.id2label or {}).items()}
         self.entail_idx = labels.get("entailment", 1)
+        self.contra_idx = labels.get("contradiction", 0)
 
     @staticmethod
     def _coverage(claim: str, context: str) -> float:
@@ -72,17 +102,45 @@ class NLIGuardrail:
         sentences = split_sentences(answer)
         if not sentences:
             return []
-        verdicts: list[SentenceVerdict] = []
-        for sentence in sentences:
+        windows = premise_windows(contexts)
+        pairs: list[tuple[str, str]] = []
+        spans: dict[int, tuple[int, int]] = {}
+        verdicts: list[SentenceVerdict | None] = []
+        for i, sentence in enumerate(sentences):
             claim = _CITATION.sub("", sentence).strip()
-            if not claim or _EXEMPT.search(claim) or not contexts:
-                verdicts.append(SentenceVerdict(sentence, bool(_EXEMPT.search(claim)), None))
+            if not claim or _EXEMPT.search(claim) or _ADVICE.match(claim) or not windows:
+                advice = bool(_EXEMPT.search(claim) or _ADVICE.match(claim))
+                verdicts.append(SentenceVerdict(sentence, advice, None))
                 continue
-            scores = self.model.predict([(ctx, claim) for ctx in contexts], apply_softmax=True)
-            entail = float(max(row[self.entail_idx] for row in scores))
+            claim_words = set(_WORD.findall(claim.lower()))
+            best = sorted(windows, key=lambda w: _overlap(claim_words, w), reverse=True)[: self.top_windows]
+            spans[i] = (len(pairs), len(pairs) + len(best))
+            pairs += [(w, claim) for w in best]
+            verdicts.append(None)
+        # One batched forward pass for every claim keeps latency to ~1-2 s per answer.
+        scores = self.model.predict(pairs, apply_softmax=True, batch_size=64) if pairs else []
+        out: list[SentenceVerdict] = []
+        for i, sentence in enumerate(sentences):
+            v = verdicts[i]
+            if v is not None:
+                out.append(v)
+                continue
+            a, b = spans[i]
+            claim = pairs[a][1]
+            claim_words = set(_WORD.findall(claim.lower()))
+            rows = scores[a:b]
+            entail = float(max(row[self.entail_idx] for row in rows))
+            contradiction = float(max(row[self.contra_idx] for row in rows))
             quoted = max(self._coverage(claim, ctx) for ctx in contexts) >= self.QUOTE_COVERAGE
-            verdicts.append(SentenceVerdict(sentence, entail >= self.threshold or quoted, round(entail, 3)))
-        return verdicts
+            # Close paraphrase: most of the claim's words sit in one passage window and
+            # no window contradicts it (catches claims that reverse what the manual says).
+            paraphrase = (
+                max(_overlap(claim_words, pairs[j][0]) for j in range(a, b)) >= self.PARAPHRASE_OVERLAP
+                and contradiction < self.CONTRADICTION_MAX
+            )
+            supported = entail >= self.threshold or quoted or paraphrase
+            out.append(SentenceVerdict(sentence, supported, round(entail, 3)))
+        return out
 
 
 class LexicalGuardrail:

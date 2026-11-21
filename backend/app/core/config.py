@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{(BACKEND_DIR / 'autocare.db').as_posix()}"
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])
 
+    # Built frontend (frontend/dist) to serve from FastAPI; unset when Caddy/Vite serves it.
+    static_dir: Path | None = None
+
     artifacts_dir: Path = BACKEND_DIR / "artifacts"
     knowledge_dir: Path = BACKEND_DIR / "knowledge"
     vectorstore_dir: Path = BACKEND_DIR / "vectorstore"
@@ -41,7 +44,7 @@ class Settings(BaseSettings):
     retrieval_min_score: float = 0.2
 
     guardrail_enabled: bool = True
-    guardrail_model: str = "cross-encoder/nli-deberta-v3-xsmall"
+    guardrail_model: str = "cross-encoder/nli-deberta-v3-small"
     guardrail_entailment_threshold: float = 0.5
     guardrail_min_supported_share: float = 0.5
 

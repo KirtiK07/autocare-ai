@@ -19,5 +19,5 @@ pytorch:
   lr: 0.001
   batch_size: 256
   max_epochs: 200
-  patience: 10
+  patience: 15
   dropout: 0.2

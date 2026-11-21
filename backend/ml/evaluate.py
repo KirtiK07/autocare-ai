@@ -8,8 +8,10 @@ from typing import Any
 import numpy as np
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     confusion_matrix,
     f1_score,
+    matthews_corrcoef,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -50,6 +52,8 @@ def classification_metrics(y_true: np.ndarray, proba: np.ndarray, threshold: flo
         "precision": float(precision_score(y_true, pred, zero_division=0)),
         "recall": float(recall_score(y_true, pred, zero_division=0)),
         "f1": float(f1_score(y_true, pred, zero_division=0)),
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, pred)),
+        "mcc": float(matthews_corrcoef(y_true, pred)),
         "roc_auc": auc,
         "confusion_matrix": confusion_matrix(y_true, pred, labels=[0, 1]).tolist(),
     }
