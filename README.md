@@ -4,7 +4,7 @@
 
 **Predicts engine faults from sensor readings with a PyTorch model (benchmarked against scikit-learn), then explains them with a RAG assistant that answers only from vehicle manuals, cites the page, and flags or removes any sentence the manuals don't support.**
 
-**Live demo:** _Vercel URL (after first deploy)_ · **Walkthrough (3 min):** _add link_
+**Live demo:** https://autocare-ai-mauve.vercel.app (the first request after idle takes ~30–60 s while models load) · **Walkthrough (3 min):** _add link_
 
 ## What it does
 
@@ -37,7 +37,7 @@ Routes are thin; business logic lives in OOP service classes behind an abstract 
 | RAG / LLM | LangChain, sentence-transformers (MiniLM embeddings), Chroma vector DB, DeBERTa NLI guardrail, Groq (`gpt-oss-120b`) or Gemini |
 | Backend | FastAPI, Pydantic, SQLAlchemy 2, Alembic, SQL (PostgreSQL / SQLite) |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, Recharts, TanStack Query |
-| DevOps | Vercel (Services, Python Functions), Docker, Docker Compose, GitHub Actions CI |
+| DevOps | Vercel (Services, Python Functions), Neon Postgres, Docker, Docker Compose, GitHub Actions CI |
 | Quality | pytest, Vitest, Playwright, ruff, black, mypy, ESLint, Prettier, pre-commit |
 
 ## Results

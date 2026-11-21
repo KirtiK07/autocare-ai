@@ -19,7 +19,7 @@ Top-level rewrites send `/api/*` to `api` and everything else to `web`, so the b
 
   Expect the first request after the app has been idle to take roughly 30–60 s. After that, the instance is warm and requests take about a second, plus LLM time.
 - **No ASGI lifespan needed:** the service container is built lazily on the first request (`ensure_container`), with a lock.
-- **Database:** without `DATABASE_URL`, SQLite lives in `/tmp`, so history resets on cold starts. For persistent history, add a free Postgres (Vercel Marketplace → Neon) and set `DATABASE_URL=postgresql+psycopg://...`. The migrations run automatically.
+- **Database:** Neon Postgres (free) from the Vercel Marketplace (`vercel integration add neon`), which sets `DATABASE_URL` for all environments. The app converts the URL to the psycopg driver and runs migrations on a cold start. Without `DATABASE_URL`, SQLite lives in `/tmp`, so history resets on cold starts and isn't shared between instances.
 
 ## Deploy
 
