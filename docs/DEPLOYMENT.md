@@ -14,7 +14,7 @@ Top-level rewrites send `/api/*` to `api` and everything else to `web`, so the b
 - **Dependencies:** `backend/pyproject.toml` lists the runtime packages; uv installs **CPU-only PyTorch** from the PyTorch index (the default CUDA wheel is several GB larger). The bundle uses Vercel's large-function support.
 - **Read-only bundle, writable `/tmp`:** on a cold start (`VERCEL=1`), `app/core/runtime.py`:
   - copies the prebuilt Chroma store (`backend/vectorstore/`, committed, about 31 MB) to `/tmp/vectorstore`;
-  - downloads the embedding (90 MB) and NLI (570 MB) models to `/tmp/hf`;
+  - downloads the embedding (90 MB) and NLI models to `/tmp/hf`. `/tmp` holds about 500 MB, so Vercel uses `nli-deberta-v3-xsmall` (280 MB) instead of `-small` (570 MB);
   - runs Alembic migrations.
 
   Expect the first request after the app has been idle to take roughly 30–60 s. After that, the instance is warm and requests take about a second, plus LLM time.
