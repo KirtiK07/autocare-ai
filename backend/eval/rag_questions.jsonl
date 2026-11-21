@@ -1,0 +1,25 @@
+{"question": "What does low oil pressure usually mean?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
+{"question": "The oil pressure warning light came on while driving. What should I do?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
+{"question": "Why would oil pressure be too high?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
+{"question": "Can a worn oil pump cause low oil pressure?", "expected_source": "AutoCare sensor glossary: Lubricant oil pressure"}
+{"question": "What causes an engine to overheat?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
+{"question": "The temperature warning light is on. What should I do first?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
+{"question": "Why does my coolant temperature stay low and the heater is weak?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
+{"question": "Where should the coolant temperature gauge sit once the engine is warm?", "expected_source": "AutoCare sensor glossary: Coolant temperature"}
+{"question": "Is it safe to open the radiator cap when the engine is hot?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
+{"question": "What does low coolant pressure indicate?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
+{"question": "Bubbles in the expansion tank: what could that mean?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
+{"question": "Why is the cooling system pressurised?", "expected_source": "AutoCare sensor glossary: Coolant pressure"}
+{"question": "What are symptoms of low fuel pressure?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
+{"question": "What happens if fuel pressure is too high?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
+{"question": "I can smell fuel near the engine. Is that dangerous?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
+{"question": "Could a clogged fuel filter cause hesitation under load?", "expected_source": "AutoCare sensor glossary: Fuel pressure"}
+{"question": "Why does oil temperature run hotter than normal?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
+{"question": "Is it bad if the oil never gets warm on short trips?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
+{"question": "How often should engine oil and the filter be changed?", "expected_source": "AutoCare sensor glossary: Lubricant oil temperature"}
+{"question": "My idle speed keeps hunting up and down. What causes that?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
+{"question": "Why is my idle RPM high after the engine has warmed up?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
+{"question": "Why does oil pressure drop at low engine speed?", "expected_source": "AutoCare sensor glossary: Engine RPM"}
+{"question": "Oil and coolant temperatures are far apart. What does that suggest?", "expected_source": "AutoCare sensor glossary: Oil versus coolant temperature"}
+{"question": "Is the AutoCare risk score the same as a mechanic's inspection?", "expected_source": "AutoCare sensor glossary: Reading an AutoCare risk score"}
+{"question": "My risk score is high. What should I check first?", "expected_source": "AutoCare sensor glossary: Reading an AutoCare risk score"}

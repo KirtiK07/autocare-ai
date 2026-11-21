@@ -1,0 +1,9 @@
+-r requirements.txt
+pytest==9.2.0
+ruff==0.17.6
+black==26.10.1
+mypy==1.15.0
+kaggle==2.2.5
+matplotlib==3.11.2
+ipykernel
+types-PyYAML

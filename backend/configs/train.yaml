@@ -1,0 +1,23 @@
+# python -m ml.train --config configs/train.yaml
+seed: 42
+artifacts_dir: artifacts
+data:
+  path: data/raw/engine_data.csv
+  # In the Kaggle engine-health dataset, "Engine Condition" = 1 marks the
+  # engine as needing attention. Flip this if your chosen dataset differs.
+  positive_label: 1
+split:
+  val_size: 0.15
+  test_size: 0.15
+# Treat as imbalanced (compare class_weight vs SMOTE, use pos_weight) when the
+# minority class is below this share of the training set.
+imbalance_threshold: 0.45
+# Decision threshold: highest precision on validation with recall >= min_recall
+# (missing a real fault is worse than a false alarm).
+min_recall: 0.85
+pytorch:
+  lr: 0.001
+  batch_size: 256
+  max_epochs: 200
+  patience: 10
+  dropout: 0.2

@@ -1,0 +1,73 @@
+# Local:  cp .env.example .env && docker compose up --build   -> http://localhost
+# Server: the deploy workflow sets BACKEND_IMAGE / FRONTEND_IMAGE to GHCR tags and runs
+#         `docker compose pull && docker compose up -d` (no build on the server).
+name: autocare-ai
+
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-autocare-ai-frontend:local}
+    build:
+      context: ./frontend
+      args:
+        VITE_REPO_URL: ${REPO_URL:-}
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
+    image: ${BACKEND_IMAGE:-autocare-ai-backend:local}
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-autocare}:${POSTGRES_PASSWORD:-autocare}@db:5432/${POSTGRES_DB:-autocare}
+      ENVIRONMENT: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    volumes:
+      - vectorstore:/app/vectorstore
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-autocare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autocare}
+      POSTGRES_DB: ${POSTGRES_DB:-autocare}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-autocare} -d ${POSTGRES_DB:-autocare}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  vectorstore:
+  caddy_data:
+  caddy_config:

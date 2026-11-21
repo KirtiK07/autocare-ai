@@ -1,0 +1,343 @@
+{
+  "summary": {
+    "questions": 25,
+    "k": 5,
+    "hit_rate_at_k": 1.0,
+    "llm": "extractive",
+    "guardrail": "nli",
+    "fully_supported_share": 1.0,
+    "covered_share": 1.0
+  },
+  "rows": [
+    {
+      "question": "What does low oil pressure usually mean?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Coolant pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil pressure is the pressure the oil pump creates to push oil through the bearings, camshaft and other moving parts. [AutoCare sensor glossary: Lubricant oil pressure] Pressure is lowest at hot idle and rises with RPM. [AutoCare sensor glossary: Lubricant oil pressure] Low oil pressure is one of the most serious warnings an engine gives: it can mean the oil level is low, the oil is too thin or degraded, the oil filter or pickup is blocked, the pump is worn, or the bearings are worn. [AutoCare sensor glossary: Lubricant oil pressure]"
+    },
+    {
+      "question": "The oil pressure warning light came on while driving. What should I do?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Reading an AutoCare risk score",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Engine RPM"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil pressure is the pressure the oil pump creates to push oil through the bearings, camshaft and other moving parts. [AutoCare sensor glossary: Lubricant oil pressure] Pressure is lowest at hot idle and rises with RPM. [AutoCare sensor glossary: Lubricant oil pressure] If the oil pressure warning light comes on while driving, stop the engine as soon as it is safe and check the oil level; driving on with no oil pressure can destroy the engine within minutes. [AutoCare sensor glossary: Lubricant oil pressure]"
+    },
+    {
+      "question": "Why would oil pressure be too high?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Oil versus coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil pressure is the pressure the oil pump creates to push oil through the bearings, camshaft and other moving parts. [AutoCare sensor glossary: Lubricant oil pressure] Pressure is lowest at hot idle and rises with RPM. [AutoCare sensor glossary: Lubricant oil pressure] Unusually high oil pressure can come from oil that is too thick, a stuck pressure-relief valve or a blocked passage. [AutoCare sensor glossary: Lubricant oil pressure]"
+    },
+    {
+      "question": "Can a worn oil pump cause low oil pressure?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil pressure is the pressure the oil pump creates to push oil through the bearings, camshaft and other moving parts. [AutoCare sensor glossary: Lubricant oil pressure] Low oil pressure is one of the most serious warnings an engine gives: it can mean the oil level is low, the oil is too thin or degraded, the oil filter or pickup is blocked, the pump is worn, or the bearings are worn. [AutoCare sensor glossary: Lubricant oil pressure] Fuel pressure is the pressure the fuel pump supplies to the injectors. [AutoCare sensor glossary: Fuel pressure]"
+    },
+    {
+      "question": "What causes an engine to overheat?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Oil versus coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Low coolant pressure can mean a leak, a faulty cap or low coolant level; the engine may then overheat. [AutoCare sensor glossary: Coolant pressure] Never open the radiator or expansion-tank cap while the engine is hot: the coolant can spray out and scald. [AutoCare sensor glossary: Coolant pressure] A reading that climbs above normal means the engine is overheating; likely causes are low coolant, a leak, a thermostat stuck closed, a failed water pump, a blocked radiator or a cooling fan that does not switch on. [AutoCare sensor glossary: Coolant temperature]"
+    },
+    {
+      "question": "The temperature warning light is on. What should I do first?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Reading an AutoCare risk score"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Coolant temperature is the engine's main health gauge. [AutoCare sensor glossary: Coolant temperature] If the temperature warning light comes on, stop when safe, switch off the engine and let it cool before checking the coolant level. [AutoCare sensor glossary: Coolant temperature] Oil temperature shows how hot the engine oil is. [AutoCare sensor glossary: Lubricant oil temperature]"
+    },
+    {
+      "question": "Why does my coolant temperature stay low and the heater is weak?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Engine RPM"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Coolant temperature is the engine's main health gauge. [AutoCare sensor glossary: Coolant temperature] After warm-up it should stay near the middle of the gauge. [AutoCare sensor glossary: Coolant temperature] If the temperature warning light comes on, stop when safe, switch off the engine and let it cool before checking the coolant level. [AutoCare sensor glossary: Coolant temperature]"
+    },
+    {
+      "question": "Where should the coolant temperature gauge sit once the engine is warm?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Engine RPM"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Coolant temperature is the engine's main health gauge. [AutoCare sensor glossary: Coolant temperature] If the temperature warning light comes on, stop when safe, switch off the engine and let it cool before checking the coolant level. [AutoCare sensor glossary: Coolant temperature] Oil and coolant temperatures normally rise together and settle close to each other once the engine is warm. [AutoCare sensor glossary: Oil versus coolant temperature]"
+    },
+    {
+      "question": "Is it safe to open the radiator cap when the engine is hot?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Never open the radiator or expansion-tank cap while the engine is hot: the coolant can spray out and scald. [AutoCare sensor glossary: Coolant pressure] A reading that climbs above normal means the engine is overheating; likely causes are low coolant, a leak, a thermostat stuck closed, a failed water pump, a blocked radiator or a cooling fan that does not switch on. [AutoCare sensor glossary: Coolant temperature] If the temperature warning light comes on, stop when safe, switch off the engine and let it cool before checking the coolant level. [AutoCare sensor glossary: Coolant temperature]"
+    },
+    {
+      "question": "What does low coolant pressure indicate?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Fuel pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "The cooling system runs under pressure so the coolant can get hotter than its normal boiling point without boiling. [AutoCare sensor glossary: Coolant pressure] Low coolant pressure can mean a leak, a faulty cap or low coolant level; the engine may then overheat. [AutoCare sensor glossary: Coolant pressure] Pressure that rises quickly, or bubbles in the expansion tank, can indicate combustion gas entering the coolant, which is a sign of a failing head gasket. [AutoCare sensor glossary: Coolant pressure]"
+    },
+    {
+      "question": "Bubbles in the expansion tank: what could that mean?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "The radiator or expansion-tank cap holds that pressure. [AutoCare sensor glossary: Coolant pressure] Pressure that rises quickly, or bubbles in the expansion tank, can indicate combustion gas entering the coolant, which is a sign of a failing head gasket. [AutoCare sensor glossary: Coolant pressure] Never open the radiator or expansion-tank cap while the engine is hot: the coolant can spray out and scald. [AutoCare sensor glossary: Coolant pressure]"
+    },
+    {
+      "question": "Why is the cooling system pressurised?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "The cooling system runs under pressure so the coolant can get hotter than its normal boiling point without boiling. [AutoCare sensor glossary: Coolant pressure] The radiator or expansion-tank cap holds that pressure. [AutoCare sensor glossary: Coolant pressure] A reading that climbs above normal means the engine is overheating; likely causes are low coolant, a leak, a thermostat stuck closed, a failed water pump, a blocked radiator or a cooling fan that does not switch on. [AutoCare sensor glossary: Coolant temperature]"
+    },
+    {
+      "question": "What are symptoms of low fuel pressure?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Fuel pressure is the pressure the fuel pump supplies to the injectors. [AutoCare sensor glossary: Fuel pressure] Too little pressure starves the engine: symptoms include hard starting, hesitation under load, misfires and loss of power. [AutoCare sensor glossary: Fuel pressure] Common causes are a weak fuel pump, a clogged fuel filter, a faulty pressure regulator or a leak. [AutoCare sensor glossary: Fuel pressure]"
+    },
+    {
+      "question": "What happens if fuel pressure is too high?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Fuel pressure is the pressure the fuel pump supplies to the injectors. [AutoCare sensor glossary: Fuel pressure] Common causes are a weak fuel pump, a clogged fuel filter, a faulty pressure regulator or a leak. [AutoCare sensor glossary: Fuel pressure] Too much pressure makes the mixture rich, which can cause poor fuel economy, black smoke and fouled spark plugs; a stuck regulator or a blocked return line are typical causes. [AutoCare sensor glossary: Fuel pressure]"
+    },
+    {
+      "question": "I can smell fuel near the engine. Is that dangerous?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Lubricant oil pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Fuel pressure is the pressure the fuel pump supplies to the injectors. [AutoCare sensor glossary: Fuel pressure] Too little pressure starves the engine: symptoms include hard starting, hesitation under load, misfires and loss of power. [AutoCare sensor glossary: Fuel pressure] Any smell of fuel or visible fuel leak is a fire risk and needs a mechanic before the vehicle is driven. [AutoCare sensor glossary: Fuel pressure]"
+    },
+    {
+      "question": "Could a clogged fuel filter cause hesitation under load?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Too little pressure starves the engine: symptoms include hard starting, hesitation under load, misfires and loss of power. [AutoCare sensor glossary: Fuel pressure] Common causes are a weak fuel pump, a clogged fuel filter, a faulty pressure regulator or a leak. [AutoCare sensor glossary: Fuel pressure] Too much pressure makes the mixture rich, which can cause poor fuel economy, black smoke and fouled spark plugs; a stuck regulator or a blocked return line are typical causes. [AutoCare sensor glossary: Fuel pressure]"
+    },
+    {
+      "question": "Why does oil temperature run hotter than normal?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil temperature shows how hot the engine oil is. [AutoCare sensor glossary: Lubricant oil temperature] Oil that runs hotter than usual thins out and protects the engine less, and it ages faster. [AutoCare sensor glossary: Lubricant oil temperature] High oil temperature often follows from cooling problems, heavy load or towing, a low oil level, or an oil cooler that is blocked. [AutoCare sensor glossary: Lubricant oil temperature]"
+    },
+    {
+      "question": "Is it bad if the oil never gets warm on short trips?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil temperature shows how hot the engine oil is. [AutoCare sensor glossary: Lubricant oil temperature] Oil that stays cold for a long time, for example on very short trips, does not burn off moisture and fuel, which also degrades it. [AutoCare sensor glossary: Lubricant oil temperature] Oil and coolant temperatures normally rise together and settle close to each other once the engine is warm. [AutoCare sensor glossary: Oil versus coolant temperature]"
+    },
+    {
+      "question": "How often should engine oil and the filter be changed?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Engine RPM"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil temperature shows how hot the engine oil is. [AutoCare sensor glossary: Lubricant oil temperature] Oil that runs hotter than usual thins out and protects the engine less, and it ages faster. [AutoCare sensor glossary: Lubricant oil temperature] High oil temperature often follows from cooling problems, heavy load or towing, a low oil level, or an oil cooler that is blocked. [AutoCare sensor glossary: Lubricant oil temperature]"
+    },
+    {
+      "question": "My idle speed keeps hunting up and down. What causes that?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Fuel pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "At idle a warm petrol engine usually turns slowly and steadily; RPM rises with throttle. [AutoCare sensor glossary: Engine RPM] An idle that hunts up and down, or that is much higher than usual once the engine is warm, can point to a vacuum leak, a dirty throttle body, a faulty idle control or a sensor fault. [AutoCare sensor glossary: Engine RPM] Very low RPM together with low oil pressure is a common pattern in readings from engines that need attention, because oil pump output falls with engine speed. [AutoCare sensor glossary: Engine RPM]"
+    },
+    {
+      "question": "Why is my idle RPM high after the engine has warmed up?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Engine RPM is how many times the crankshaft turns per minute. [AutoCare sensor glossary: Engine RPM] At idle a warm petrol engine usually turns slowly and steadily; RPM rises with throttle. [AutoCare sensor glossary: Engine RPM] An idle that hunts up and down, or that is much higher than usual once the engine is warm, can point to a vacuum leak, a dirty throttle body, a faulty idle control or a sensor fault. [AutoCare sensor glossary: Engine RPM]"
+    },
+    {
+      "question": "Why does oil pressure drop at low engine speed?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Engine RPM",
+        "AutoCare sensor glossary: Fuel pressure",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Oil versus coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Low oil pressure is one of the most serious warnings an engine gives: it can mean the oil level is low, the oil is too thin or degraded, the oil filter or pickup is blocked, the pump is worn, or the bearings are worn. [AutoCare sensor glossary: Lubricant oil pressure] If the oil pressure warning light comes on while driving, stop the engine as soon as it is safe and check the oil level; driving on with no oil pressure can destroy the engine within minutes. [AutoCare sensor glossary: Lubricant oil pressure] Very low RPM together with low oil pressure is a common pattern in readings from engines that need attention, because oil pump output falls with engine speed. [AutoCare sensor glossary: Engine RPM]"
+    },
+    {
+      "question": "Oil and coolant temperatures are far apart. What does that suggest?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Oil versus coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil temperature",
+        "AutoCare sensor glossary: Coolant pressure",
+        "AutoCare sensor glossary: Coolant temperature",
+        "AutoCare sensor glossary: Lubricant oil pressure"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "Oil and coolant temperatures normally rise together and settle close to each other once the engine is warm. [AutoCare sensor glossary: Oil versus coolant temperature] The cooling system runs under pressure so the coolant can get hotter than its normal boiling point without boiling. [AutoCare sensor glossary: Coolant pressure] Low coolant pressure can mean a leak, a faulty cap or low coolant level; the engine may then overheat. [AutoCare sensor glossary: Coolant pressure]"
+    },
+    {
+      "question": "Is the AutoCare risk score the same as a mechanic's inspection?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Reading an AutoCare risk score"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "The AutoCare fault-risk score is a statistical estimate from a model trained on snapshot sensor readings. [AutoCare sensor glossary: Reading an AutoCare risk score] It is not an inspection and it cannot see wear, leaks or noises. [AutoCare sensor glossary: Reading an AutoCare risk score] Treat a high score as a prompt to check the readings it highlights, starting with oil level and coolant level, and have a qualified mechanic inspect the engine before relying on the vehicle. [AutoCare sensor glossary: Reading an AutoCare risk score]"
+    },
+    {
+      "question": "My risk score is high. What should I check first?",
+      "hit": true,
+      "retrieved": [
+        "AutoCare sensor glossary: Reading an AutoCare risk score",
+        "AutoCare sensor glossary: Lubricant oil pressure",
+        "AutoCare sensor glossary: Coolant temperature"
+      ],
+      "covered": true,
+      "fully_supported": true,
+      "answer": "The AutoCare fault-risk score is a statistical estimate from a model trained on snapshot sensor readings. [AutoCare sensor glossary: Reading an AutoCare risk score] Treat a high score as a prompt to check the readings it highlights, starting with oil level and coolant level, and have a qualified mechanic inspect the engine before relying on the vehicle. [AutoCare sensor glossary: Reading an AutoCare risk score] Unusually high oil pressure can come from oil that is too thick, a stuck pressure-relief valve or a blocked passage. [AutoCare sensor glossary: Lubricant oil pressure]"
+    }
+  ]
+}

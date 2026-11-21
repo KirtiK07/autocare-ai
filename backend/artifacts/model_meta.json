@@ -1,0 +1,124 @@
+{
+  "model_version": "pytorch-2026-11-21",
+  "served_model": "pytorch",
+  "served_model_name": "PyTorch EngineFaultNet",
+  "sklearn_model": "random_forest",
+  "feature_order": [
+    "engine_rpm",
+    "lub_oil_pressure",
+    "fuel_pressure",
+    "coolant_pressure",
+    "lub_oil_temp",
+    "coolant_temp",
+    "oil_fuel_ratio",
+    "coolant_oil_ratio",
+    "temp_delta",
+    "rpm_band_low",
+    "rpm_band_mid",
+    "rpm_band_high"
+  ],
+  "sensor_columns": [
+    "engine_rpm",
+    "lub_oil_pressure",
+    "fuel_pressure",
+    "coolant_pressure",
+    "lub_oil_temp",
+    "coolant_temp"
+  ],
+  "threshold": 0.32,
+  "risk_bands": {
+    "medium": 0.192,
+    "high": 0.32
+  },
+  "n_features": 12,
+  "pytorch": {
+    "hidden": [
+      64,
+      32
+    ],
+    "dropout": 0.2
+  },
+  "trained_at": "2026-11-21T14:49:17+00:00",
+  "dataset": {
+    "source": "synthetic",
+    "fetched_at": "2026-11-21T14:42:47+00:00",
+    "name": "Synthetic stand-in (scripts/download_data.py --synthetic)",
+    "url": "",
+    "rows": 19535,
+    "fault_share": 0.624
+  },
+  "test_metrics": {
+    "threshold": 0.32,
+    "accuracy": 0.7198908222449676,
+    "precision": 0.74,
+    "recall": 0.8496446145434664,
+    "f1": 0.7910409773479257,
+    "roc_auc": 0.7906024039000614,
+    "confusion_matrix": [
+      [
+        556,
+        546
+      ],
+      [
+        275,
+        1554
+      ]
+    ]
+  },
+  "samples": {
+    "healthy": {
+      "engine_rpm": 740.0,
+      "lub_oil_pressure": 4.678,
+      "fuel_pressure": 4.699,
+      "coolant_pressure": 2.236,
+      "lub_oil_temp": 74.881,
+      "coolant_temp": 69.453
+    },
+    "faulty": {
+      "engine_rpm": 426.0,
+      "lub_oil_pressure": 1.881,
+      "fuel_pressure": 3.721,
+      "coolant_pressure": 2.25,
+      "lub_oil_temp": 75.358,
+      "coolant_temp": 77.35
+    }
+  },
+  "sensor_ranges": {
+    "engine_rpm": {
+      "min": 62.0,
+      "max": 2300.0,
+      "healthy_p05": 376.0,
+      "healthy_p95": 1526.0
+    },
+    "lub_oil_pressure": {
+      "min": 0.01,
+      "max": 7.3,
+      "healthy_p05": 2.183,
+      "healthy_p95": 5.305
+    },
+    "fuel_pressure": {
+      "min": 0.119,
+      "max": 21.0,
+      "healthy_p05": 2.154,
+      "healthy_p95": 11.748
+    },
+    "coolant_pressure": {
+      "min": 0.01,
+      "max": 5.923,
+      "healthy_p05": 0.905,
+      "healthy_p95": 4.025
+    },
+    "lub_oil_temp": {
+      "min": 71.0,
+      "max": 90.0,
+      "healthy_p05": 72.762,
+      "healthy_p95": 81.259
+    },
+    "coolant_temp": {
+      "min": 61.0,
+      "max": 105.789,
+      "healthy_p05": 69.423,
+      "healthy_p95": 85.81
+    }
+  }
+}
