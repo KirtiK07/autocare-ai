@@ -12,7 +12,7 @@ const STACK: [string, string][] = [
   ["RAG", "LangChain, sentence-transformers, Chroma, NLI cross-encoder guardrail, Groq or Gemini"],
   ["Backend", "FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL"],
   ["Frontend", "React, Vite, TypeScript, Tailwind CSS, Recharts, TanStack Query"],
-  ["Ops", "Docker, Docker Compose, GitHub Actions CI/CD, Hugging Face Spaces"],
+  ["Ops", "Vercel (Services + Python Functions), Docker Compose, GitHub Actions CI"],
 ];
 
 /** Architecture: UI → Caddy → FastAPI (services) → Postgres / Chroma / LLM. Offline jobs feed artifacts. */

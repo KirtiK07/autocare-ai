@@ -4,7 +4,7 @@
 
 **Predicts engine faults from sensor readings with a PyTorch model (benchmarked against scikit-learn), then explains them with a RAG assistant that answers only from vehicle manuals, cites the page, and flags or removes any sentence the manuals don't support.**
 
-**Live demo:** _Hugging Face Space link (after first deploy)_ · **Walkthrough (3 min):** _add link_
+**Live demo:** _Vercel URL (after first deploy)_ · **Walkthrough (3 min):** _add link_
 
 ## What it does
 
@@ -17,9 +17,9 @@ Also included: batch CSV scoring (up to 1,000 rows), prediction history with sav
 ## Architecture
 
 ```
-Production (Hugging Face Space, one container)      Local (docker compose)
-Browser ─▶ FastAPI ─┬─ /api/*  ─▶ services           Browser ─▶ Caddy ─┬─ static React app
-                    └─ /*      ─▶ built React app                      └─ /api ─▶ FastAPI ─▶ PostgreSQL
+Production (Vercel, one project, two services)       Local (docker compose)
+Browser ─▶ Vercel ─┬─ /api/* ─▶ FastAPI (Python fn)   Browser ─▶ Caddy ─┬─ static React app
+                   └─ /*     ─▶ React app (CDN)                         └─ /api ─▶ FastAPI ─▶ PostgreSQL
 
 FastAPI services: FaultPredictor (PyTorch / scikit-learn) · DiagnosticAgent ─┬─ ManualRetriever (Chroma)
                                                                             ├─ LLMClient (Groq · Gemini · extractive)
@@ -37,7 +37,7 @@ Routes are thin; business logic lives in OOP service classes behind an abstract 
 | RAG / LLM | LangChain, sentence-transformers (MiniLM embeddings), Chroma vector DB, DeBERTa NLI guardrail, Groq (`gpt-oss-120b`) or Gemini |
 | Backend | FastAPI, Pydantic, SQLAlchemy 2, Alembic, SQL (PostgreSQL / SQLite) |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, Recharts, TanStack Query |
-| DevOps | Docker, Docker Compose, GitHub Actions CI/CD, Hugging Face Spaces |
+| DevOps | Vercel (Services, Python Functions), Docker, Docker Compose, GitHub Actions CI |
 | Quality | pytest, Vitest, Playwright, ruff, black, mypy, ESLint, Prettier, pre-commit |
 
 ## Results
@@ -87,7 +87,7 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 Put `LLM_API_KEY=<groq key>` in a root `.env` (copy `.env.example`). Without a key, the assistant runs in extractive mode and quotes the manuals directly.
 
 **Full stack in Docker:** `docker compose up --build` → http://localhost (Caddy + FastAPI + PostgreSQL).
-**Deploy:** push to `main` → CI → the Hugging Face Space updates automatically. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+**Deploy:** `vercel deploy --prod`, or push to `main` once the repo is connected to Vercel. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 **Tests:** `cd backend && pytest` · `cd frontend && npm test && npm run test:e2e`
 
 ## Project structure
@@ -99,10 +99,10 @@ backend/
   ml/             features.py (shared preprocessing), baselines.py, nets.py (PyTorch), evaluate.py, train.py
   rag/            ingest.py, store.py, evaluate.py
   artifacts/      trained model, scaler, metrics, results.md, rag_eval.json
+  vectorstore/    prebuilt Chroma index (shipped with the Vercel function)
   knowledge/      pdfs/ (public-domain manuals), sensor_glossary.md, SOURCES.md
   eval/           rag_questions.jsonl     notebooks/ 01_eda.ipynb     alembic/     tests/
 frontend/         React app, Vitest unit tests, Playwright smoke test, Caddyfile (compose)
-deploy/hf/        Single-container Dockerfile, Space card, upload script
 docs/             ARCHITECTURE · MODEL_CARD · API · DEPLOYMENT · DECISIONS
 ```
 

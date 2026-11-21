@@ -1,40 +1,48 @@
-# Deployment (Hugging Face Spaces, free)
+# Deployment (Vercel, free Hobby plan)
 
-The app ships as **one Docker container** on a Hugging Face Space (free CPU tier: 2 vCPU, 16 GB RAM, enough for PyTorch, the embedding model and the NLI guardrail). FastAPI serves the API under `/api` and the built React app on every other path.
+One Vercel project with two **Services** (see `vercel.json`):
 
+| Service | Root | What runs |
+| --- | --- | --- |
+| `web` | `frontend/` | Vite build of the React app, served from Vercel's CDN (SPA fallback to `index.html`) |
+| `api` | `backend/` | FastAPI as a Python Vercel Function (`app/main.py`), Fluid Compute, 2 GB / 1 vCPU, 300 s max |
+
+Top-level rewrites send `/api/*` to `api` and everything else to `web`, so the browser talks to one origin and needs no CORS.
+
+## How the backend fits a serverless function
+
+- **Dependencies:** `backend/pyproject.toml` lists the runtime packages; uv installs **CPU-only PyTorch** from the PyTorch index (the default CUDA wheel is several GB larger). The bundle uses Vercel's large-function support.
+- **Read-only bundle, writable `/tmp`:** on a cold start (`VERCEL=1`), `app/core/runtime.py`:
+  - copies the prebuilt Chroma store (`backend/vectorstore/`, committed, about 31 MB) to `/tmp/vectorstore`;
+  - downloads the embedding (90 MB) and NLI (570 MB) models to `/tmp/hf`;
+  - runs Alembic migrations.
+
+  Expect the first request after the app has been idle to take roughly 30–60 s. After that, the instance is warm and requests take about a second, plus LLM time.
+- **No ASGI lifespan needed:** the service container is built lazily on the first request (`ensure_container`), with a lock.
+- **Database:** without `DATABASE_URL`, SQLite lives in `/tmp`, so history resets on cold starts. For persistent history, add a free Postgres (Vercel Marketplace → Neon) and set `DATABASE_URL=postgresql+psycopg://...`. The migrations run automatically.
+
+## Deploy
+
+```bash
+npm i -g vercel
+vercel login
+vercel link --project autocare-ai
+vercel env add LLM_API_KEY production --sensitive    # Groq key
+vercel env add LLM_PROVIDER production               # groq
+vercel deploy --prod
 ```
-push to main ──▶ CI (lint, types, tests, build) ──▶ Deploy workflow
-                                                     └─ deploy/hf/push.py: stage backend/ + frontend/ + Dockerfile,
-                                                        upload to the Space, set Space secrets
-Hugging Face builds deploy/hf/Dockerfile: npm build → pip install → bake models → build Chroma index
-```
 
-## One-time setup (about 5 minutes)
+Connect the GitHub repo (Project → Settings → Git) to deploy every push to `main` automatically, with a preview deployment for every pull request.
 
-1. Create a free account at huggingface.co.
-2. Create a **write** token at https://huggingface.co/settings/tokens.
-3. In the GitHub repo, open **Settings → Secrets and variables → Actions**:
+## Rebuilding the vector store
 
-   | Kind | Name | Value |
-   | --- | --- | --- |
-   | Secret | `HF_TOKEN` | The write token |
-   | Secret | `LLM_API_KEY` | Your Groq key |
-   | Variable | `HF_SPACE` | `<your-hf-username>/autocare-ai` |
-   | Secret (optional) | `DATABASE_URL` | A free Postgres URL, e.g. from neon.tech, as `postgresql+psycopg://user:pass@host/db?sslmode=require` |
-
-4. Run the **Deploy** workflow (Actions → Deploy → Run workflow), or push to `main`.
-
-The workflow creates the Space if it doesn't exist and copies `LLM_API_KEY` (and `DATABASE_URL`) into the Space's secrets; they're never written into the uploaded files. The first build takes roughly 10–15 minutes, because it installs PyTorch and builds the vector index. After that, the app is live at `https://<hf-username>-autocare-ai.hf.space`.
-
-## Database
-
-Without `DATABASE_URL`, the Space uses SQLite in `/tmp`. That works, but the history resets whenever the Space restarts or sleeps (free Spaces sleep after about 48 hours without visits). Set `DATABASE_URL` to a free Neon Postgres database to keep the history. Alembic creates the tables on startup.
+The index ships prebuilt. After changing `backend/knowledge/`, run `python -m rag.ingest` locally and commit `backend/vectorstore/`.
 
 ## Local alternatives
 
-- `docker compose up --build`: the full three-container stack (Caddy + FastAPI + PostgreSQL) on http://localhost.
-- Single container exactly as deployed: `docker build -f deploy/hf/Dockerfile -t autocare . && docker run -p 7860:7860 -e LLM_API_KEY=... autocare`. Run it from the repo root after `python deploy/hf/push.py`-style staging, or simply run `docker build` from a folder containing `backend/`, `frontend/` and that Dockerfile.
+- `docker compose up --build`: the full Caddy + FastAPI + PostgreSQL stack on http://localhost.
+- Dev servers: `uvicorn app.main:app --reload` plus `npm run dev` (Vite proxies `/api`).
 
 ## Roll back
 
-Each deploy is a commit in the Space repository. Revert the bad commit on GitHub `main` (CI and Deploy run again), or revert the commit in the Space's **Files → History** tab.
+Vercel → Project → Deployments → pick an earlier deployment → **Promote to Production** (or `vercel rollback`).

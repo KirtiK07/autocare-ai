@@ -1,0 +1,15 @@
+.venv
+node_modules
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+frontend/dist
+playwright-report
+test-results
+backend/data
+backend/notebooks
+backend/*.db
+.env
+.env.local
+*.zip

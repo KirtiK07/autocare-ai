@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -28,10 +29,12 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        # Models and the vector store load once here, not per request.
-        app.state.container = container_factory(settings)
+        # Models and the vector store load once per process, not per request.
+        ensure_container(app)
         yield
-        app.state.container.engine.dispose()
+        container = getattr(app.state, "container", None)
+        if container is not None:
+            container.engine.dispose()
 
     app = FastAPI(
         title="AutoCare AI API",
@@ -42,6 +45,9 @@ def create_app(
         redoc_url=None,
         openapi_url="/api/openapi.json",
     )
+    app.state.settings = settings
+    app.state.container_factory = container_factory
+    app.state.container_lock = threading.Lock()
     app.state.diagnose_limiter = RateLimiter(settings.diagnose_rate_limit_per_minute)
     app.add_middleware(
         CORSMiddleware,
@@ -55,6 +61,22 @@ def create_app(
     if settings.static_dir and (settings.static_dir / "index.html").exists():
         mount_spa(app, settings.static_dir)
     return app
+
+
+def ensure_container(app: FastAPI) -> Container:
+    """Build the service container once per process.
+
+    Called from the lifespan hook and, as a fallback, lazily from the first request, so
+    serverless runtimes that skip ASGI lifespan events (e.g. Vercel Functions) still work.
+    """
+    container = getattr(app.state, "container", None)
+    if container is None:
+        with app.state.container_lock:
+            container = getattr(app.state, "container", None)
+            if container is None:
+                container = app.state.container_factory(app.state.settings)
+                app.state.container = container
+    return container  # type: ignore[no-any-return]
 
 
 def mount_spa(app: FastAPI, static_dir: Path) -> None:

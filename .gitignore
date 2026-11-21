@@ -14,7 +14,6 @@ __pycache__/
 
 # Data and generated stores (rebuilt by scripts)
 backend/data/raw/
-backend/vectorstore/
 backend/*.db
 
 # Node
@@ -31,3 +30,5 @@ Thumbs.db
 
 # Local downloads
 *.zip
+.vercel
+.env*

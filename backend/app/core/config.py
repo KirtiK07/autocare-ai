@@ -9,6 +9,10 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from app.core.runtime import prepare_environment
+
+prepare_environment()
+
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -56,6 +60,15 @@ class Settings(BaseSettings):
     def _split_origins(cls, v: object) -> object:
         if isinstance(v, str) and not v.strip().startswith("["):
             return [o.strip() for o in v.split(",") if o.strip()]
+        return v
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        """Neon/Heroku-style URLs (postgres://, postgresql://) -> SQLAlchemy's psycopg 3 driver."""
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix) :]
         return v
 
     @field_validator("artifacts_dir", "knowledge_dir", "vectorstore_dir", mode="after")

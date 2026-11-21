@@ -10,7 +10,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
-from app.db.base import make_engine, make_session_factory
+from app.core.runtime import on_vercel, run_migrations, writable_vectorstore
+from app.db import models  # noqa: F401 - register tables
+from app.db.base import Base, make_engine, make_session_factory
 from app.services.diagnostic_agent import DiagnosticAgent
 from app.services.fault_predictor import FaultPredictor, ModelNotReadyError
 from app.services.guardrail import Guardrail, build_guardrail
@@ -48,7 +50,16 @@ class Container:
 
 def build_container(settings: Settings) -> Container:
     errors: dict[str, str] = {}
+    if on_vercel():
+        try:
+            run_migrations(settings.database_url)
+        except Exception as exc:  # noqa: BLE001 - report via /api/health instead of crashing
+            errors["database"] = str(exc)
+            log.exception("Migrations failed")
     engine = make_engine(settings.database_url)
+    if on_vercel():
+        # Safety net for a fresh /tmp SQLite file: create any table the migration missed (idempotent).
+        Base.metadata.create_all(engine)
     predictor: FaultPredictor | None
     try:
         predictor = FaultPredictor(settings.artifacts_dir)
@@ -59,7 +70,7 @@ def build_container(settings: Settings) -> Container:
     retriever: Retriever
     try:
         retriever = ManualRetriever(
-            settings.vectorstore_dir,
+            writable_vectorstore(settings.vectorstore_dir),
             settings.collection_name,
             settings.embedding_model,
             settings.retrieval_min_score,

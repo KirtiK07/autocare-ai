@@ -1,10 +1,11 @@
 # Architecture
 
-Three containers: **Caddy + React** (frontend), **FastAPI** (backend: ML model and RAG agent) and **PostgreSQL** locally via Docker Compose. In production on Hugging Face Spaces, the same FastAPI app also serves the built React app from one container. Training (`ml.train`) and ingestion (`rag.ingest`) are offline commands; the backend loads their outputs (`artifacts/`, `vectorstore/`) once at startup in FastAPI's lifespan.
+Three containers: **Caddy + React** (frontend), **FastAPI** (backend: ML model and RAG agent) and **PostgreSQL** locally via Docker Compose. In production on Vercel, the React build is served from the CDN and FastAPI runs as a Python Function; one project routes `/api/*` to the function and everything else to the SPA. Training (`ml.train`) and ingestion (`rag.ingest`) are offline commands; the backend loads their outputs (`artifacts/`, `vectorstore/`) once at startup in FastAPI's lifespan.
 
 ```
 Local (docker compose):  Browser ──HTTPS──▶ Caddy ──/api/*──▶ FastAPI
-Production (HF Space):   Browser ──HTTPS──▶ FastAPI (serves /api and the built SPA)
+Production (Vercel):     Browser ──HTTPS──▶ Vercel ─┬─ /api/* ▶ FastAPI Python Function
+                                                   └─ /*     ▶ React SPA on the CDN
 
 Browser ──HTTPS──▶ Caddy ──/api/*──▶ FastAPI (uvicorn)
                     │                   ├─ FaultPredictor  ── artifacts/ (scaler.joblib, fault_net.pt, model_meta.json)

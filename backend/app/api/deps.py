@@ -14,7 +14,9 @@ from app.services.fault_predictor import FaultPredictor
 
 
 def get_container(request: Request) -> Container:
-    return request.app.state.container  # type: ignore[no-any-return]
+    from app.main import ensure_container
+
+    return ensure_container(request.app)
 
 
 def get_session(request: Request) -> Iterator[Session]:

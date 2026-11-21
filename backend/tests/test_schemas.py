@@ -25,3 +25,11 @@ def test_missing_and_extra_fields_rejected() -> None:
         SensorReading(**data)
     with pytest.raises(ValidationError):
         SensorReading(**SAMPLE, turbo_boost=1.0)
+
+
+def test_database_url_gets_psycopg_driver() -> None:
+    from app.core.config import Settings
+
+    url = "postgresql://u:p@ep-x.neon.tech/db?sslmode=require"
+    assert Settings(database_url=url).database_url.startswith("postgresql+psycopg://u:p@")
+    assert Settings(database_url="sqlite://").database_url == "sqlite://"
